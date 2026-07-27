@@ -336,128 +336,128 @@ export default function App() {
         </Suspense>
       ) : (
         <>
-        <div className="controls">
-          <div className="shell controls-inner">
-            <div className="preset-row">
-              {PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className="preset"
-                  aria-pressed={activePreset === preset.id}
-                  title={preset.blurb}
-                  onClick={() => runPreset(preset.id)}
-                >
-                  {preset.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="ghost-btn"
-                aria-expanded={builderOpen}
-                onClick={() => setBuilderOpen((v) => !v)}
-              >
-                {builderOpen ? 'Hide filters' : 'Filters'}
-              </button>
-            </div>
-
-            <QueryChips
-              query={query}
-              onRemoveFilter={(i) => applyQuery(removeFilter(query, i), null)}
-              onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
-              similarTo={similarPin}
-              onClearSimilar={clearSimilar}
-            />
-
-            {builderOpen && data ? (
-              <FilterBuilder
-                query={query}
-                onChange={(next) => applyQuery(next, null)}
-                teams={data.teams}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        <main className="shell" style={{ flex: 1 }}>
-          {bootError ? (
-            <div className="error-box">
-              <strong>Could not load the phase index.</strong> {bootError}
-            </div>
-          ) : null}
-
-          {issues.length ? (
-            <div className="error-box">
-              <strong>That query is not valid.</strong>
-              <ul>
-                {issues.map((issue) => (
-                  <li key={issue}>{issue}</li>
+          <div className="controls">
+            <div className="shell controls-inner">
+              <div className="preset-row">
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className="preset"
+                    aria-pressed={activePreset === preset.id}
+                    title={preset.blurb}
+                    onClick={() => runPreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
                 ))}
-              </ul>
-            </div>
-          ) : null}
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  aria-expanded={builderOpen}
+                  onClick={() => setBuilderOpen((v) => !v)}
+                >
+                  {builderOpen ? 'Hide filters' : 'Filters'}
+                </button>
+              </div>
 
-          {parseNote || dropped.length ? (
-            <div className="note-box">
-              {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
-              {parseNote}
-              {dropped.length ? (
-                <>
-                  {' '}
-                  <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
-                  that, so it was left out rather than approximated.
-                </>
+              <QueryChips
+                query={query}
+                onRemoveFilter={(i) => applyQuery(removeFilter(query, i), null)}
+                onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
+                similarTo={similarPin}
+                onClearSimilar={clearSimilar}
+              />
+
+              {builderOpen && data ? (
+                <FilterBuilder
+                  query={query}
+                  onChange={(next) => applyQuery(next, null)}
+                  teams={data.teams}
+                />
               ) : null}
             </div>
-          ) : null}
-
-          <div className="results-head">
-            <span className="results-count">
-              {!data ? (
-                <span className="status-line">
-                  <span className="spinner" /> loading the phase index…
-                </span>
-              ) : searching ? (
-                <span className="status-line">
-                  <span className="spinner" /> searching…
-                </span>
-              ) : similarPin ? (
-                <>
-                  <strong className="num">{rows.length}</strong> most similar phases
-                </>
-              ) : (
-                <>
-                  <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
-                  {(result?.total ?? 0) > rows.length ? (
-                    <>
-                      {' '}
-                      · showing the top <span className="num">{rows.length}</span>
-                    </>
-                  ) : null}
-                </>
-              )}
-            </span>
-            {result && !searching ? (
-              <span className="results-count num" title="Wall time for the DuckDB query in your browser">
-                {result.ms.toFixed(0)} ms
-              </span>
-            ) : null}
           </div>
 
-          {!data && !bootError ? (
-            <SkeletonGrid count={8} />
-          ) : (
-            <ResultsGrid
-              rows={rows}
-              loading={searching && rows.length === 0}
-              onOpen={openPhaseById}
-              onSimilar={findSimilar}
-              pin={{ isPinned, onToggle: togglePin }}
-            />
-          )}
-        </main>
+          <main className="shell" style={{ flex: 1 }}>
+            {bootError ? (
+              <div className="error-box">
+                <strong>Could not load the phase index.</strong> {bootError}
+              </div>
+            ) : null}
 
-        <Insights />
+            {issues.length ? (
+              <div className="error-box">
+                <strong>That query is not valid.</strong>
+                <ul>
+                  {issues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {parseNote || dropped.length ? (
+              <div className="note-box">
+                {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
+                {parseNote}
+                {dropped.length ? (
+                  <>
+                    {' '}
+                    <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
+                    that, so it was left out rather than approximated.
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="results-head">
+              <span className="results-count">
+                {!data ? (
+                  <span className="status-line">
+                    <span className="spinner" /> loading the phase index…
+                  </span>
+                ) : searching ? (
+                  <span className="status-line">
+                    <span className="spinner" /> searching…
+                  </span>
+                ) : similarPin ? (
+                  <>
+                    <strong className="num">{rows.length}</strong> most similar phases
+                  </>
+                ) : (
+                  <>
+                    <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
+                    {(result?.total ?? 0) > rows.length ? (
+                      <>
+                        {' '}
+                        · showing the top <span className="num">{rows.length}</span>
+                      </>
+                    ) : null}
+                  </>
+                )}
+              </span>
+              {result && !searching ? (
+                <span className="results-count num" title="Wall time for the DuckDB query in your browser">
+                  {result.ms.toFixed(0)} ms
+                </span>
+              ) : null}
+            </div>
+
+            {!data && !bootError ? (
+              <SkeletonGrid count={8} />
+            ) : (
+              <ResultsGrid
+                rows={rows}
+                loading={searching && rows.length === 0}
+                onOpen={openPhaseById}
+                onSimilar={findSimilar}
+                pin={{ isPinned, onToggle: togglePin }}
+              />
+            )}
+          </main>
+
+          <Insights />
         </>
       )}
 
