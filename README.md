@@ -223,9 +223,11 @@ context per run. Loopback removes real network latency from the paint numbers, s
 treat FMP as a floor; the query times are pure compute and travel unchanged. The
 harness that produces them is committed as [`web/shoot.mjs`](web/shoot.mjs) — it also
 takes every screenshot in this README, so the numbers and the pictures come from the
-same artifact that ships. The five preset timings on the run above were 134, 55, 74,
-46 and 72 ms. The app footer shows the last query's time live, so the claim is
-checkable in the deployed site rather than only here.
+same artifact that ships. The five preset timings on that run were 134, 55, 74, 46
+and 72 ms. Re-running the whole harness gave 492 ms / 1,491 ms / 42–127 ms / 146 ms
+on the same four rows, which is the run-to-run spread on this machine. The app footer
+shows the last query's time live, so the claim is checkable in the deployed site
+rather than only here.
 
 Eager payload: 335 kB of app JS (103 kB gzipped), 33 kB CSS, `phases.parquet` at
 2.90 MB and `matches.parquet` at 10.7 kB. DuckDB-WASM (18.1 MB, 4.26 MB gzipped) and
