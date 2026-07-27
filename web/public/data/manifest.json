@@ -1,7 +1,7 @@
 {
   "dataset_version": "1.0.0",
-  "built_at": "2026-07-27T17:07:15+00:00",
-  "build_seconds": 13.4,
+  "built_at": "2026-07-27T17:09:08+00:00",
+  "build_seconds": 16.4,
   "attribution": "Data provided by StatsBomb. Halfspace is built on StatsBomb Open Data. Used under the StatsBomb Public Data User Agreement for research and non-commercial analysis. StatsBomb is not affiliated with this project and does not endorse any analysis presented here.",
   "competitions": [
     {
@@ -42,11 +42,11 @@
   },
   "frame_orientation": {
     "event": 312422,
-    "unknown": 10682,
-    "mirrored": 8279
+    "mirrored": 8279,
+    "unknown": 10682
   },
   "files": {
-    "phases.parquet": 2901054,
+    "phases.parquet": 2900870,
     "matches.parquet": 10720,
     "similarity.parquet": 2657177,
     "phase_events/": 13800241,
