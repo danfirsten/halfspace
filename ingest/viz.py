@@ -25,14 +25,22 @@ OUT = REPO / "web" / "public" / "charts"
 
 # CONTRACT §5. The charts have to look like they belong to the same product as
 # the pitch, so the palette is not "a dark theme" — it is exactly this one.
-BG = "#161a1e"
-TEXT = "#e8eaec"
-DIM = "#8b949e"
-HAIRLINE = "#262c31"
-ACCENT = "#3fb6a8"
+BG = "#12171c"
+TEXT = "#f0f3f6"
+DIM = "#9aa5b1"
+HAIRLINE = "#2b333b"
+ACCENT = "#7cc7e8"
 BALL = "#f5c451"
-BLUE = "#5b8dd9"
+BLUE = "#6d78e0"
+INK = "#04161d"
+# Four steps of the accent, from the turf up. Used by every heatmap so a dense
+# cell means the same thing in the zone grid and in the duration matrix.
+RAMP = ["#0e161d", "#1c3846", "#3d7c99", ACCENT]
 FONT = "Inter, ui-sans-serif, system-ui, sans-serif"
+# The wordmark's face carries chart titles too, and every number in a chart is
+# a number in the interface — same rule, same faces.
+DISPLAY_FONT = "Space Grotesk, Inter, ui-sans-serif, system-ui, sans-serif"
+NUM_FONT = "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
 
 # Outcome colours match the badge colours in the results grid so a reader can
 # carry one mapping across the whole page.
@@ -40,10 +48,10 @@ OUTCOME_COLOURS = {
     "goal": BALL,
     "shot_on_target": ACCENT,
     "shot_off_target": BLUE,
-    "foul_won": "#6f7b86",
-    "out_of_play": "#4c565f",
-    "lost_ball": "#333c44",
-    "end_of_period": "#232a30",
+    "foul_won": "#7b8794",
+    "out_of_play": "#565f6b",
+    "lost_ball": "#3a4550",
+    "end_of_period": "#262e37",
 }
 OUTCOME_ORDER = [
     "goal",
@@ -86,6 +94,7 @@ def halfspace_theme() -> dict:
             "padding": {"left": 2, "top": 4, "right": 2, "bottom": 2},
             "title": {
                 "color": TEXT,
+                "font": DISPLAY_FONT,
                 "fontSize": 12,
                 "fontWeight": 600,
                 "anchor": "start",
@@ -103,7 +112,8 @@ def halfspace_theme() -> dict:
                 "gridOpacity": 0.55,
                 "domainColor": HAIRLINE,
                 "tickColor": HAIRLINE,
-                "labelFont": FONT,
+                "labelFont": NUM_FONT,
+                "labelFontSize": 9.5,
                 "titleFont": FONT,
                 "labelPadding": 4,
             },
@@ -121,7 +131,7 @@ def halfspace_theme() -> dict:
                 "columns": 4,
                 "offset": 4,
             },
-            "range": {"heatmap": ["#131a20", "#1d3b3d", "#256a63", "#3fb6a8"]},
+            "range": {"heatmap": RAMP},
         }
     }
 
@@ -235,7 +245,7 @@ def chart_xg_distribution(con: duckdb.DuckDBPyConnection) -> dict:
             color=alt.Color(
                 "result:N",
                 title=None,
-                scale=alt.Scale(domain=["Scored", "Did not score"], range=[BALL, "#33424c"]),
+                scale=alt.Scale(domain=["Scored", "Did not score"], range=[BALL, "#3d4854"]),
             ),
             tooltip=[
                 alt.Tooltip("bin:Q", title="xG from", format=".2f"),
@@ -289,7 +299,7 @@ def chart_start_zone_heatmap(con: duckdb.DuckDBPyConnection) -> dict:
         color=alt.Color(
             "shot_rate:Q",
             title="shot rate",
-            scale=alt.Scale(range=["#131a20", "#1d3b3d", "#256a63", ACCENT]),
+            scale=alt.Scale(range=RAMP),
             legend=alt.Legend(format="%", gradientLength=110),
         ),
         tooltip=[
@@ -300,12 +310,12 @@ def chart_start_zone_heatmap(con: duckdb.DuckDBPyConnection) -> dict:
             alt.Tooltip("mean_xg:Q", title="mean xG", format=".3f"),
         ],
     )
-    labels = base.mark_text(fontSize=10, font=FONT, dy=0).encode(
+    labels = base.mark_text(fontSize=10, font=NUM_FONT, dy=0).encode(
         x=alt.X("Third:N", sort=["Defensive", "Middle", "Final"], axis=alt.Axis(labelAngle=0)),
         y=alt.Y("Channel:N", sort=["Left", "Centre", "Right"]),
         text=alt.Text("shot_rate:Q", format=".0%"),
         # Only the brightest cell is light enough to need dark text on it.
-        color=alt.condition(alt.datum.shot_rate > 0.42, alt.value("#06231f"), alt.value(TEXT)),
+        color=alt.condition(alt.datum.shot_rate > 0.42, alt.value(INK), alt.value(TEXT)),
     )
     return write(
         "start-zone-heatmap",
@@ -352,7 +362,7 @@ def chart_progression_vs_duration(con: duckdb.DuckDBPyConnection) -> dict:
             color=alt.Color(
                 "n:Q",
                 title="phases",
-                scale=alt.Scale(type="log", range=["#131a20", "#1d3b3d", "#256a63", ACCENT]),
+                scale=alt.Scale(type="log", range=RAMP),
                 legend=alt.Legend(gradientLength=110),
             ),
             tooltip=[
