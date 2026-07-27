@@ -22,6 +22,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Insights } from './charts/Insights';
 import { FilterBuilder } from './components/FilterBuilder';
+import { FirstRunHint } from './components/FirstRunHint';
 import { Footer } from './components/Footer';
 import { PhasePlayer } from './components/PhasePlayer';
 import { QueryChips } from './components/QueryChips';
@@ -31,6 +32,7 @@ import { describeFilter } from './dsl/compile';
 import { EMPTY_QUERY, parseQuery, type PhaseQuery } from './dsl/schema';
 import { DEFAULT_PRESET, PRESETS } from './dsl/presets';
 import { HalfspaceData, type SearchResult } from './duck/data';
+import { dismissHint, shouldShowHint } from './lib/firstRun';
 import { integer } from './lib/format';
 import { removeFilter } from './lib/builderState';
 import { readHashParam, writeHashParam } from './lib/hash';
@@ -63,6 +65,15 @@ export default function App() {
   const [similarPin, setSimilarPin] = useState<SimilarPin | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [pinNote, setPinNote] = useState<string | null>(null);
+
+  // Read synchronously so the hint is in the first render and never shifts the
+  // grid down after paint. See lib/firstRun.ts.
+  const [hintOpen, setHintOpen] = useState(shouldShowHint);
+  const [hintDone, setHintDone] = useState({ preset: false, opened: false, similar: false });
+  const closeHint = useCallback(() => {
+    dismissHint();
+    setHintOpen(false);
+  }, []);
 
   const [hash, setHash] = useState<string>(() =>
     typeof window === 'undefined' ? '' : window.location.hash,
@@ -140,7 +151,10 @@ export default function App() {
   const openPhaseId = reportTarget ? null : readHashParam(hash, 'phase');
 
   const openPhaseById = useCallback(
-    (phaseId: string | null) => setHashParam('phase', phaseId),
+    (phaseId: string | null) => {
+      if (phaseId) setHintDone((d) => (d.opened ? d : { ...d, opened: true }));
+      setHashParam('phase', phaseId);
+    },
     [setHashParam],
   );
 
@@ -166,6 +180,7 @@ export default function App() {
       setParseNote(null);
       setDropped([]);
       setParseSource(null);
+      setHintDone((d) => (d.preset ? d : { ...d, preset: true }));
       applyQuery(preset.query, preset.id);
     },
     [applyQuery],
@@ -195,6 +210,10 @@ export default function App() {
       if (!row) return;
       setSearching(true);
       setActivePreset(null);
+      // The taught path ends here, so the hint has done its job and retires
+      // itself — a reviewer who followed it never has to close it.
+      setHintDone((d) => ({ ...d, similar: true }));
+      closeHint();
       setSimilarPin({
         phaseId,
         label: `${row.team_name} v ${row.opponent_name}, ${row.minute}'`,
@@ -208,7 +227,7 @@ export default function App() {
         setSearching(false);
       }
     },
-    [data, result, openPhaseById],
+    [data, result, openPhaseById, closeHint],
   );
 
   const clearSimilar = useCallback(() => {
@@ -400,6 +419,8 @@ export default function App() {
           </div>
 
           <main className="shell" style={{ flex: 1 }}>
+            {hintOpen ? <FirstRunHint done={hintDone} onDismiss={closeHint} /> : null}
+
             {bootError ? (
               <div className="error-box">
                 <strong>Could not load the phase index.</strong> {bootError}
