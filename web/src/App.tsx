@@ -207,6 +207,7 @@ export default function App() {
         result?.rows.find((r) => r.phase_id === phaseId) ?? (await data.phaseById(phaseId));
       if (!row) return;
       setSearching(true);
+      setActivePreset(null);
       setSimilarPin({
         phaseId,
         label: `${row.team_name} v ${row.opponent_name}, ${row.minute}'`,

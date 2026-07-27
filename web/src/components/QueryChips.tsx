@@ -27,18 +27,32 @@ export function QueryChips({
 }: Props) {
   const empty = query.filters.length === 0 && !query.order_by && !similarTo;
 
-  return (
-    <div className="chip-row">
-      <span className="chip-label">Understood as</span>
-
-      {similarTo ? (
+  // A similarity search is not a filtered search: the vectors are ranked over
+  // the whole dataset, so showing the query's chips next to the results would
+  // claim a constraint that was not applied. They are held, not shown.
+  if (similarTo) {
+    return (
+      <div className="chip-row">
+        <span className="chip-label">Showing</span>
         <span className="chip chip-similar">
-          similar to {similarTo.label}
+          phases similar to {similarTo.label}
           <button type="button" onClick={onClearSimilar} aria-label="Clear similarity search">
             ✕
           </button>
         </span>
-      ) : null}
+        <span className="chip-empty">
+          ranked over all 16,782 phases
+          {query.filters.length
+            ? ` — your ${query.filters.length} filter${query.filters.length === 1 ? ' is' : 's are'} paused until you clear this`
+            : ''}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chip-row">
+      <span className="chip-label">Understood as</span>
 
       {query.filters.map((filter, i) => (
         <span className="chip" key={`${filter.field}-${filter.op}-${i}`}>
