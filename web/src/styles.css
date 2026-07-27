@@ -231,8 +231,10 @@ a:hover {
 }
 
 .search:focus-within {
-  border-color: var(--accent-dim);
+  border-color: var(--accent);
   background: var(--surface-2);
+  /* The input itself has no outline, so the box has to carry the focus. */
+  box-shadow: 0 0 0 2px rgba(63, 182, 168, 0.28);
 }
 
 .search input {
@@ -454,8 +456,8 @@ a:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border-radius: 3px;
   transition:
@@ -757,7 +759,7 @@ a:hover {
 }
 
 .card-stats .sep {
-  color: var(--rule);
+  color: var(--text-mute);
 }
 
 .mini-btn {
@@ -1080,11 +1082,12 @@ a:hover {
 }
 
 .info-btn {
+  position: relative;
   background: none;
   border: 1px solid var(--hairline);
   color: var(--text-mute);
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   font-size: 10px;
   line-height: 1;
@@ -1093,7 +1096,15 @@ a:hover {
   justify-content: center;
   cursor: help;
   padding: 0;
-  transition: color var(--fast) var(--ease);
+  transition:
+    color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+/* A 26px target around a 16px mark. */
+.info-btn::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
 }
 .info-btn:hover,
 .info-btn[aria-expanded='true'] {
@@ -1414,7 +1425,7 @@ a:hover {
 }
 
 .field-row .dash {
-  color: var(--rule);
+  color: var(--text-mute);
 }
 
 select {
@@ -1981,25 +1992,27 @@ select:disabled {
 
 .insights {
   border-top: 1px solid var(--hairline);
-  padding: 26px 0 8px;
+  padding: var(--sp-32) 0 var(--sp-8);
 }
 
 .section-head {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: var(--sp-12);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
 }
 .section-head h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-title);
   font-weight: 600;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.015em;
 }
 .section-head p {
   margin: 0;
-  font-size: 12.5px;
-  color: var(--text-dim);
+  font-size: var(--fs-small);
+  color: var(--text-mute);
+  max-width: 78ch;
 }
 
 .chart-grid {
@@ -2023,14 +2036,16 @@ select:disabled {
   overflow-x: auto;
 }
 .chart-card h3 {
-  margin: 0 0 2px;
-  font-size: 13px;
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-ui);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .chart-card p {
-  margin: 0 0 8px;
-  font-size: 11.5px;
+  margin: 0 0 var(--sp-8);
+  font-size: var(--fs-small);
   color: var(--text-dim);
+  max-width: 78ch;
 }
 .chart-card .vega-embed {
   width: 100%;
@@ -2048,9 +2063,9 @@ select:disabled {
 }
 
 .footer-inner {
-  padding: 20px 24px 26px;
+  padding: var(--sp-24) var(--sp-24);
   display: flex;
-  gap: 24px;
+  gap: var(--sp-24);
   align-items: flex-start;
   flex-wrap: wrap;
   max-width: 1440px;
@@ -2064,10 +2079,13 @@ select:disabled {
   opacity: 0.9;
 }
 
+/* The licence text ran ~175 characters to the line. It is required wording, so
+   it cannot be shortened — it can be set to a readable measure. */
 .footer-text {
   flex: 1 1 420px;
-  font-size: 11.5px;
-  line-height: 1.6;
+  max-width: 78ch;
+  font-size: var(--fs-small);
+  line-height: 1.65;
   color: var(--text-mute);
 }
 .footer-text a {
@@ -2080,13 +2098,14 @@ select:disabled {
 }
 
 .footer-meta {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-mute);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--sp-4);
   align-items: flex-end;
   min-width: 150px;
+  margin-left: auto;
 }
 .footer-meta .num {
   color: var(--text-dim);
@@ -2716,12 +2735,59 @@ select:disabled {
   border: 0;
 }
 
+/* ---------- reduced motion ----------
+   Not a blanket `animation-duration: 0.01ms`. That kills the loading spinner
+   and the freeze-frame cross-fade, which are feedback rather than decoration,
+   and leaves the user worse informed than before. What stops here is entrance
+   choreography, looping decoration and travel; what survives is every change
+   that tells you something happened.
+
+   The thumbnails' ball sweep is the one animation that is CONTENT — it is the
+   phase's own trajectory — and it stops too, drawing the complete path with
+   the ball at its end (see pitch/thumbnailClock.ts). The shape stays readable;
+   only the motion goes. */
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .chip,
+  .info-pop,
+  .player,
+  .overlay,
+  .report-share-pop,
+  .first-run {
+    animation: none !important;
+  }
+
+  /* A moving highlight sweeping a placeholder is pure decoration. */
+  .shimmer::after {
+    animation: none;
+    opacity: 0.55;
+  }
+
+  /* Keep the hover response, drop the travel. */
+  .card:hover,
+  .card:focus-visible,
+  .card:focus-within {
+    transform: none;
+  }
+  .card-open {
+    transform: none;
+    transition: opacity var(--fast) var(--ease);
+  }
+
+  /* A frozen spinner reads as a hung page. It breathes instead of turning. */
+  .spinner {
+    animation: spinner-pulse 1.6s ease-in-out infinite;
+    border-color: var(--accent-dim);
+    border-top-color: var(--accent);
+  }
+}
+
+@keyframes spinner-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
   }
 }

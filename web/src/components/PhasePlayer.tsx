@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PhaseEventRow, PhaseFrameRow, PhaseRow } from '../duck/types';
 import { FLAG_ACTOR, FLAG_KEEPER, FLAG_POSSESSION } from '../duck/types';
 import { clampX, clampY, Pitch } from '../pitch/Pitch';
+import { usePrefersReducedMotion } from '../lib/reducedMotion';
 import { clock, outcomeBadgeClass, outcomeLabel, percent, seconds, startTypeLabel, xg as fmtXg } from '../lib/format';
 
 const CROSSFADE_MS = 250;
@@ -125,6 +126,7 @@ export function PhasePlayer({
   const frameIndexRef = useRef(-1);
   const [hovered, setHovered] = useState<number | null>(null);
   const [displayTime, setDisplayTime] = useState(0);
+  const reducedMotion = usePrefersReducedMotion();
 
   const timeRef = useRef(0);
   const ballRef = useRef<SVGCircleElement | null>(null);
@@ -352,7 +354,10 @@ export function PhasePlayer({
                 opacity={0.75}
               />
               <circle ref={ballRef} cx={phase.path_xy[0] ?? 60} cy={phase.path_xy[1] ?? 40} r={1.15} fill="var(--ball)">
-                <animate attributeName="r" values="1.15;1.4;1.15" dur="1.4s" repeatCount="indefinite" />
+                {/* Decoration, not data — the ball's travel is the phase. */}
+                {reducedMotion ? null : (
+                  <animate attributeName="r" values="1.15;1.4;1.15" dur="1.4s" repeatCount="indefinite" />
+                )}
               </circle>
             </Pitch>
           </div>

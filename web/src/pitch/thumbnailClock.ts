@@ -38,7 +38,7 @@ if (typeof window !== 'undefined' && window.matchMedia) {
   mq.addEventListener?.('change', (e) => {
     reducedMotion = e.matches;
     if (reducedMotion) {
-      for (const entry of entries.values()) paint(entry, 1);
+      for (const entry of entries.values()) paintStill(entry);
       stop();
     } else if (entries.size) start();
   });
@@ -55,6 +55,23 @@ function paint(entry: Entry, t: number) {
   const tail = Math.max(0, head - length * TRAIL_FRACTION);
   trail.setAttribute('stroke-dasharray', `${head - tail} ${length}`);
   trail.setAttribute('stroke-dashoffset', String(-tail));
+}
+
+/**
+ * The reduced-motion rendering: the whole trajectory lit, ball parked at its
+ * end. The sweep is content — it is this phase's ball path — so removing the
+ * motion must not remove the information, and a 34% comet tail frozen in place
+ * would show only the last third of the shape.
+ */
+function paintStill(entry: Entry) {
+  const { path, trail, ball, length } = entry;
+  const point = path.getPointAtLength(length);
+  ball.setAttribute('cx', String(point.x));
+  ball.setAttribute('cy', String(point.y));
+  ball.setAttribute('opacity', '1');
+  trail.removeAttribute('stroke-dasharray');
+  trail.removeAttribute('stroke-dashoffset');
+  trail.setAttribute('opacity', '0.9');
 }
 
 function tick(now: number) {
@@ -103,7 +120,7 @@ export function subscribeThumbnail(
   const id = nextId++;
   const entry: Entry = { path, trail, ball, length, offset: (index * 90) % CYCLE_MS };
   entries.set(id, entry);
-  if (reducedMotion) paint(entry, 1);
+  if (reducedMotion) paintStill(entry);
   else start();
   return () => {
     entries.delete(id);
