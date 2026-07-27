@@ -82,11 +82,11 @@ const report = {};
   await shot(page, 'natural-language');
   report.nl_note = (await page.locator('.note-box').first().innerText()).replace(/\s+/g, ' ');
 
-  await page.click('.ghost-btn');
+  await page.click('.preset-row .ghost-btn');
   await page.waitForSelector('.builder');
   await page.waitForTimeout(500);
   await shot(page, 'filter-builder');
-  await page.click('.ghost-btn');
+  await page.click('.preset-row .ghost-btn');
 
   await page.click('.preset >> nth=4');
   await idle(page);
@@ -103,7 +103,7 @@ const report = {};
   report.player_360_coverage = await page.locator('.pstat').last().locator('.v').innerText();
 
   // Cold "find similar": includes the one-time 2.66 MB similarity.parquet fetch.
-  await page.click('.player-head-actions .ghost-btn');
+  await page.locator('.player-head-actions .ghost-btn', { hasText: 'Find similar' }).click();
   await idle(page);
   report.similar_cold_ms = await page.locator('.results-head .num').last().innerText();
   await page.waitForTimeout(800);
@@ -111,7 +111,7 @@ const report = {};
   report.similar_results = await page.locator('.card').count();
 
   // Warm: this is the query the < 300 ms budget is actually about.
-  await page.locator('.card .mini-btn').nth(3).click();
+  await page.locator('.card .mini-btn', { hasText: /^Similar$/ }).nth(3).click();
   await idle(page);
   report.similar_warm_ms = await page.locator('.results-head .num').last().innerText();
 
@@ -139,6 +139,113 @@ const report = {};
     return Boolean(img && img.naturalWidth > 0);
   });
 
+  await ctx.close();
+}
+
+// ----------------------------------------------------------------- report ---
+// A fresh context, because the report lives in localStorage and the run has to
+// start from "no reports" every time.
+{
+  const ctx = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+  });
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const page = await ctx.newPage();
+  page.on('console', (m) => m.type() === 'error' && errors.push(`report console: ${m.text()}`));
+  page.on('pageerror', (e) => errors.push(`report pageerror: ${e.message}`));
+
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.card', { timeout: 90000 });
+  await idle(page);
+
+  // Two phases from the first preset, one from the second: two searches, so
+  // the report must come out with two sections.
+  const pin = page.locator('.card .mini-btn', { hasText: /^Pin$/ });
+  await pin.nth(0).click();
+  await pin.nth(1).click();
+  await page.locator('.preset').nth(1).click();
+  await idle(page);
+  await page.locator('.card .mini-btn', { hasText: /^Pin$/ }).first().click();
+
+  // The fourth goes in from the player, on the keyboard.
+  await page.locator('.card').nth(2).click();
+  await page.waitForSelector('.player-pitch', { timeout: 30000 });
+  await page.keyboard.press('p');
+  await page.keyboard.press('Escape');
+  report.report_pin_count = await page.locator('.pin-count').innerText();
+
+  await page.locator('.report-entry').click();
+  await page.waitForSelector('.report-doc', { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelectorAll('.rstat').length >= 6, null, {
+    timeout: 30000,
+  });
+  report.report_sections = await page.locator('.report-section').count();
+  report.report_cards = await page.locator('.report-grid .card').count();
+  report.report_summary = (await page.locator('.report-summary').innerText()).replace(/\n/g, ' ');
+
+  await page.getByLabel('Report title').fill('Germany — pressing triggers');
+  await page
+    .getByLabel('Analyst notes')
+    .fill(
+      'They press the near-side centre-back and leave the far side open; the switch is on every time. ' +
+        'Second half, the trigger moves to the pivot.',
+    );
+  await page.waitForTimeout(1400);
+  // Full page: a report is a document, and half of one proves nothing.
+  await page.screenshot({ path: `${OUT}/report.png`, fullPage: true });
+  console.log('  shot report');
+
+  // Persistence: the same URL, cold.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.report-doc', { timeout: 60000 });
+  report.report_title_after_reload = await page.getByLabel('Report title').inputValue();
+
+  await page.locator('.report-share .ghost-btn').click();
+  await page.waitForTimeout(900);
+  const shareLink = await page.locator('.report-share-url').inputValue();
+  report.share_url_chars = shareLink.length;
+  report.share_size_line = await page.locator('.report-share-size').first().innerText();
+  await page.locator('.report-share-pop .mini-btn').click();
+  await page.waitForTimeout(300);
+  report.share_copy_state = await page.locator('.report-share-pop .mini-btn').innerText();
+  await page.keyboard.press('Escape');
+
+  // The print variant: light on white, no animation, every phase frozen
+  // mid-trajectory.
+  await page.emulateMedia({ media: 'print' });
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${OUT}/report-print.png`, fullPage: true });
+  console.log('  shot report-print');
+  await page.emulateMedia({ media: 'screen' });
+
+  // Someone else's browser, with the link and nothing else.
+  const guest = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const guestPage = await guest.newPage();
+  guestPage.on('console', (m) => m.type() === 'error' && errors.push(`guest console: ${m.text()}`));
+  guestPage.on('pageerror', (e) => errors.push(`guest pageerror: ${e.message}`));
+  await guestPage.goto(shareLink, { waitUntil: 'domcontentloaded' });
+  await guestPage.waitForSelector('.report-banner', { timeout: 90000 });
+  await guestPage.waitForFunction(() => document.querySelectorAll('.rstat').length >= 6, null, {
+    timeout: 30000,
+  });
+  report.shared_title = await guestPage.locator('.report-title').innerText();
+  report.shared_cards = await guestPage.locator('.report-grid .card').count();
+  report.shared_is_read_only = (await guestPage.getByLabel('Report title').count()) === 0;
+  report.shared_summary_matches_source =
+    (await guestPage.locator('.report-summary').innerText()).replace(/\n/g, ' ') ===
+    report.report_summary;
+  // The player has to work from inside an imported report as well.
+  await guestPage.locator('.report-grid .card').first().click();
+  await guestPage.waitForSelector('.player-pitch', { timeout: 30000 });
+  report.shared_player_dots = await guestPage.locator('.player-pitch circle').count();
+  await guestPage.keyboard.press('Escape');
+  await guestPage.locator('.report-banner .ghost-btn').click();
+  await guestPage.waitForTimeout(600);
+  report.shared_save_a_copy_is_editable =
+    (await guestPage.getByLabel('Report title').count()) === 1;
+
+  await guest.close();
   await ctx.close();
 }
 

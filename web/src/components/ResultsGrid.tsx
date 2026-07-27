@@ -205,15 +205,21 @@ export function SkeletonGrid({ count = 8 }: { count?: number }) {
   return (
     <div className="grid" aria-hidden="true">
       {Array.from({ length: count }, (_, i) => (
-        <div className="skeleton-card" key={i}>
-          <div style={{ background: 'var(--turf)', opacity: 0.7 }}>
-            <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
-          </div>
-          <div className="skeleton-line shimmer" style={{ width: '58%' }} />
-          <div className="skeleton-line shimmer" style={{ width: '38%', height: 7 }} />
-          <div className="skeleton-line shimmer" style={{ width: '72%', height: 7, marginBottom: 14 }} />
-        </div>
+        <SkeletonCard key={i} />
       ))}
+    </div>
+  );
+}
+
+export function SkeletonCard() {
+  return (
+    <div className="skeleton-card" aria-hidden="true">
+      <div style={{ background: 'var(--turf)', opacity: 0.7 }}>
+        <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
+      </div>
+      <div className="skeleton-line shimmer" style={{ width: '58%' }} />
+      <div className="skeleton-line shimmer" style={{ width: '38%', height: 7 }} />
+      <div className="skeleton-line shimmer" style={{ width: '72%', height: 7, marginBottom: 14 }} />
     </div>
   );
 }

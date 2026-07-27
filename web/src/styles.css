@@ -1627,6 +1627,12 @@ select:focus {
   color: #4d565e;
 }
 
+/* A section that has not been renamed still has to read as a heading, so its
+   placeholder is only one step dimmer than real text — not form-field grey. */
+.report-section-title::placeholder {
+  color: #7d8791;
+}
+
 .report-byline {
   margin: 6px 0 0;
   font-size: 12.5px;

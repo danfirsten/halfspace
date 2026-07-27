@@ -23,7 +23,7 @@ import type { PhaseQuery } from '../dsl/schema';
 import { asPhase, type HalfspaceData } from '../duck/data';
 import type { PhaseRow } from '../duck/types';
 import { PhasePlayer } from '../components/PhasePlayer';
-import { MissingPhaseCard, PhaseCard } from '../components/ResultsGrid';
+import { MissingPhaseCard, PhaseCard, SkeletonCard } from '../components/ResultsGrid';
 import { integer, seconds, xg as fmtXg } from '../lib/format';
 import { readHashParam, writeHashParam } from '../lib/hash';
 import { usePhaseDetail } from '../lib/usePhaseDetail';
@@ -92,6 +92,11 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
   const report = shared ? imported : stored;
   const readOnly = shared;
 
+  // Printing renders the same prose as plain text rather than as form fields:
+  // an empty textarea would otherwise print its placeholder and its border.
+  const printing = usePrinting();
+  const staticText = readOnly || printing;
+
   const ids = useMemo(() => (report ? allPhaseIds(report) : []), [report]);
   const idKey = ids.join(',');
 
@@ -100,11 +105,14 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
   const [summary, setSummary] = useState<SummaryRow | null>(null);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  /** The pin set the lookup has actually answered for. */
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data || ids.length === 0) {
       setRows(new Map());
       setSummary(null);
+      setResolvedKey(ids.length === 0 ? idKey : null);
       return;
     }
     let cancelled = false;
@@ -134,11 +142,13 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
               }
             : null,
         );
+        setResolvedKey(idKey);
         setLoading(false);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         setQueryError(error instanceof Error ? error.message : String(error));
+        setResolvedKey(idKey);
         setLoading(false);
       });
     return () => {
@@ -169,9 +179,6 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
   const ordered = useMemo(() => ids.filter((id) => rows.has(id)), [ids, rows]);
   const openIndex = openPhaseId ? ordered.indexOf(openPhaseId) : -1;
   const detail = usePhaseDetail(data, openPhaseId, (id) => rows.get(id));
-
-  // ---- printing --------------------------------------------------------------
-  const printing = usePrinting();
 
   // ---- edits -----------------------------------------------------------------
   const mutate = useCallback(
@@ -283,8 +290,8 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
 
       <article className="report-doc">
         <header className="report-head">
-          {readOnly ? (
-            <h1 className="report-title">{report.title}</h1>
+          {staticText ? (
+            <h1 className="report-title">{title || 'Untitled report'}</h1>
           ) : (
             <input
               className="report-title report-title-input"
@@ -310,9 +317,9 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
 
         <SummaryStrip summary={summary} loading={loading} error={queryError} missing={missing} />
 
-        {readOnly ? (
-          report.notes ? (
-            <p className="report-notes-print">{report.notes}</p>
+        {staticText ? (
+          notes ? (
+            <p className="report-notes-print">{notes}</p>
           ) : null
         ) : (
           <AutoTextarea
@@ -334,6 +341,8 @@ export default function ReportPage({ data, target, onRunQuery, onSimilar, onBack
               index={i}
               rows={rows}
               readOnly={readOnly}
+              staticText={staticText}
+              pending={!data || resolvedKey !== idKey}
               frozen={printing}
               onOpen={openPhase}
               onRunQuery={onRunQuery}
@@ -673,6 +682,8 @@ function SectionBlock({
   index,
   rows,
   readOnly,
+  staticText,
+  pending,
   frozen,
   onOpen,
   onRunQuery,
@@ -682,6 +693,10 @@ function SectionBlock({
   index: number;
   rows: Map<string, PhaseRow>;
   readOnly: boolean;
+  /** Render prose as text rather than as fields (shared view, or printing). */
+  staticText: boolean;
+  /** The phase lookup has not come back yet. */
+  pending: boolean;
   frozen: boolean;
   onOpen: (phaseId: string) => void;
   onRunQuery: (query: PhaseQuery) => void;
@@ -698,8 +713,10 @@ function SectionBlock({
   return (
     <section className="report-section">
       <div className="report-section-head">
-        {readOnly ? (
-          <h2 className="report-section-title">{sectionHeading(section, index)}</h2>
+        {staticText ? (
+          <h2 className="report-section-title">
+            {sectionHeading({ ...section, heading }, index)}
+          </h2>
         ) : (
           <input
             className="report-section-title report-title-input"
@@ -747,7 +764,7 @@ function SectionBlock({
         </div>
       )}
 
-      {readOnly ? (
+      {staticText ? (
         note ? (
           <p className="report-notes-print">{note}</p>
         ) : null
@@ -765,7 +782,12 @@ function SectionBlock({
         {section.phase_ids.map((id, i) => {
           const row = rows.get(id);
           if (!row) {
-            return (
+            // "Not found" is a claim about the index, so it waits until the
+            // lookup has actually come back — a phase must never be accused of
+            // missing while it is still loading.
+            return pending ? (
+              <SkeletonCard key={id} />
+            ) : (
               <MissingPhaseCard
                 key={id}
                 phaseId={id}
