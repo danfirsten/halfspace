@@ -413,6 +413,7 @@ export default function App() {
                   query={query}
                   onChange={(next) => applyQuery(next, null)}
                   teams={data.teams}
+                  onClear={() => applyQuery({ ...query, filters: [] }, null)}
                 />
               ) : null}
             </div>

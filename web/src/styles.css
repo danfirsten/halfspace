@@ -348,6 +348,7 @@ a:hover {
   padding: var(--sp-6) var(--sp-12);
   font-size: var(--fs-body);
   cursor: pointer;
+  white-space: nowrap;
   transition:
     color var(--fast) var(--ease),
     border-color var(--fast) var(--ease),
@@ -393,6 +394,7 @@ a:hover {
   letter-spacing: 0.06em;
   color: var(--text-mute);
   margin-right: var(--sp-2);
+  white-space: nowrap;
 }
 
 .chip {
@@ -523,24 +525,34 @@ a:hover {
 
 @media (max-width: 760px) {
   .header-inner {
-    padding-top: 11px;
-    padding-bottom: 11px;
-    gap: 9px;
+    padding-top: var(--sp-12);
+    padding-bottom: var(--sp-12);
+    gap: var(--sp-8);
+    row-gap: var(--sp-8);
   }
+  /* Brand and report entry share the top line; the search box — the primary
+     control — is the next thing you meet, not the fourth. */
   .brand {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
+    border-right: 0;
+    padding-right: 0;
+    margin-right: 0;
+  }
+  .report-entry {
+    order: 1;
   }
   .search {
     flex: 1 1 100%;
-    order: 3;
+    order: 2;
   }
   .search .badge-offline {
     display: none;
   }
   .dataset-line {
-    order: 2;
+    order: 3;
     flex: 1 1 100%;
-    font-size: 11.5px;
+    font-size: var(--fs-micro);
+    white-space: normal;
   }
   /* One swipeable row rather than five stacked pills. */
   .preset-row {
@@ -554,10 +566,6 @@ a:hover {
   }
   .preset-row::-webkit-scrollbar {
     display: none;
-  }
-  .builder {
-    max-height: none;
-    grid-template-columns: minmax(0, 1fr);
   }
   /* Chips swipe rather than stack, so results stay above the fold. */
   .chip-row {
@@ -1139,50 +1147,138 @@ a:hover {
   border: 1px solid var(--hairline);
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 16px;
-  margin-top: 4px;
+  padding: var(--sp-16);
+  margin-top: var(--sp-4);
+}
+
+.builder-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-12);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-8);
+  margin-bottom: var(--sp-16);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.builder-head h2 {
+  margin: 0;
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.builder-head p {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-mute);
+}
+
+.builder-head .grow {
+  flex: 1;
+}
+
+.builder-head .ghost-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Four hand-balanced columns. `auto-fit` let the 29-item team list set the row
+   height and left 200px of dead space in three neighbours; this does not. */
+.builder-cols {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px 22px;
-  max-height: min(58vh, 620px);
-  overflow-y: auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.72fr) minmax(0, 1.2fr);
+  gap: var(--sp-20) var(--sp-24);
   align-items: start;
+}
+
+.builder-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+  min-width: 0;
 }
 
 .builder-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sp-8);
   min-width: 0;
 }
 
 .builder-group h3 {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-mute);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-6);
+}
+
+.group-count {
+  min-width: 16px;
+  padding: 0 var(--sp-4);
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.builder-hint {
+  margin: 0;
+  font-size: var(--fs-micro);
+  color: var(--text-mute);
+  line-height: 1.5;
 }
 
 .check-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--sp-4);
+}
+
+/* The one list with no natural bound gets its own scroll box and its own
+   filter, rather than deciding the height of the whole panel. */
+.check-scroll {
+  /* Five and a bit rows: enough to read, and the half row is the scroll cue. */
+  max-height: 130px;
+  overflow-y: auto;
+  align-content: flex-start;
+  padding: var(--sp-2);
+  margin: calc(var(--sp-2) * -1);
+  border-radius: var(--radius-sm);
+}
+
+.team-filter {
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4) var(--sp-8);
+  font-size: var(--fs-small);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--fast) var(--ease);
+}
+.team-filter:focus {
+  border-color: var(--accent-dim);
+}
+.team-filter::placeholder {
+  color: var(--text-mute);
 }
 
 .check {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--sp-6);
   border: 1px solid var(--hairline);
   background: var(--surface-2);
-  border-radius: 4px;
-  padding: 3px 8px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4) var(--sp-8);
+  font-size: var(--fs-small);
   color: var(--text-dim);
   cursor: pointer;
   user-select: none;
@@ -1193,11 +1289,12 @@ a:hover {
 }
 .check:hover {
   color: var(--text);
+  border-color: var(--hairline-lit);
 }
 .check input {
   appearance: none;
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border: 1px solid var(--rule);
   border-radius: 2px;
   margin: 0;
@@ -1220,41 +1317,103 @@ a:hover {
 .check:has(input:checked) {
   color: var(--text);
   border-color: var(--accent-dim);
-  background: rgba(63, 182, 168, 0.1);
+  background: var(--accent-wash);
 }
 
-.range-row {
+/* Tri-state feature toggles. They sit next to plain checkboxes, so the mark
+   well is always present and always the same size — the difference between
+   "not filtered", "required" and "excluded" is the mark, never the geometry. */
+.tri {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.tri-btn {
+  gap: var(--sp-6);
+}
+
+.tri-mark {
+  display: inline-grid;
+  place-content: center;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.tri-btn[data-state='on'] {
+  color: var(--text);
+  border-color: var(--accent-dim);
+  background: var(--accent-wash);
+}
+.tri-btn[data-state='on'] .tri-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06231f;
+}
+.tri-btn[data-state='off'] {
+  color: var(--danger);
+  border-color: var(--danger-line);
+  background: rgba(160, 70, 55, 0.12);
+}
+.tri-btn[data-state='off'] .tri-mark {
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+/* One row shape for every labelled control in the panel. */
+.field-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: var(--sp-6);
+  font-size: var(--fs-small);
   color: var(--text-dim);
 }
 
-.range-row label {
-  flex: 0 0 118px;
+.field-row label {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 5px;
-  line-height: 1.2;
+  gap: var(--sp-4);
+  line-height: 1.25;
 }
 
-.range-row input[type='number'] {
-  width: 100%;
-  min-width: 0;
+.field-row .unit {
+  color: var(--text-mute);
+}
+
+.field-row select {
+  flex: 0 1 auto;
+  max-width: 60%;
+}
+
+.num-input {
+  width: 68px;
+  flex: 0 0 68px;
   background: var(--surface-2);
   border: 1px solid var(--hairline);
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4) var(--sp-6);
+  font-size: var(--fs-small);
   outline: none;
   transition: border-color var(--fast) var(--ease);
 }
-.range-row input[type='number']:focus {
+.num-input:focus {
   border-color: var(--accent-dim);
 }
+.num-input::placeholder {
+  color: var(--text-mute);
+}
 
-.range-row .dash {
+.range-row label {
+  flex: 1 1 96px;
+}
+
+.field-row .dash {
   color: var(--rule);
 }
 
@@ -1263,64 +1422,112 @@ select {
   max-width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--hairline);
-  border-radius: 4px;
-  padding: 4px 7px;
-  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4) var(--sp-6);
+  font-size: var(--fs-small);
   outline: none;
 }
 select:focus {
   border-color: var(--accent-dim);
 }
+select:disabled {
+  opacity: 0.5;
+}
+
+/* ---- zone picker, drawn on the real pitch ---- */
 
 .zone-picker {
-  display: grid;
-  grid-template-columns: 16px repeat(3, 1fr);
-  gap: 3px;
+  position: relative;
   width: 100%;
-  max-width: 220px;
-  align-items: center;
+  max-width: 200px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--turf);
 }
 
-.zone-axis {
-  font-size: 9.5px;
-  letter-spacing: 0.04em;
-  color: var(--text-mute);
-  text-align: center;
-  text-transform: uppercase;
+.zone-pitch {
+  display: block;
+  width: 100%;
 }
-.zone-axis.row {
-  text-align: right;
-  padding-right: 2px;
+
+/* The SVG is 128 × 88 units for a 120 × 80 pitch, so the touchlines sit at
+   4/128 and 4/88 of the box. The cells land on the real thirds and channels. */
+.zone-grid {
+  position: absolute;
+  left: 3.125%;
+  right: 3.125%;
+  top: 4.5455%;
+  bottom: 4.5455%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 
 .zone-cell {
-  background: var(--turf);
-  border: 1px solid var(--hairline);
-  border-radius: 3px;
-  height: 26px;
+  background: none;
+  border: 0;
+  border-right: 1px dashed rgba(138, 148, 158, 0.16);
+  border-bottom: 1px dashed rgba(138, 148, 158, 0.16);
   color: var(--text-mute);
-  font-size: 10px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   padding: 0;
   transition:
     background var(--fast) var(--ease),
-    border-color var(--fast) var(--ease);
+    color var(--fast) var(--ease);
+}
+.zone-cell:nth-child(3n) {
+  border-right: 0;
+}
+.zone-cell:nth-child(n + 7) {
+  border-bottom: 0;
 }
 .zone-cell:hover {
-  border-color: var(--rule);
+  background: rgba(63, 182, 168, 0.14);
+  color: var(--text-dim);
 }
 .zone-cell[aria-pressed='true'] {
-  background: rgba(63, 182, 168, 0.34);
-  border-color: var(--accent-dim);
+  background: rgba(63, 182, 168, 0.32);
+  color: #d8fffa;
+}
+.zone-cell:focus-visible {
+  outline-offset: -3px;
 }
 
 .zone-legend {
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   color: var(--text-mute);
   display: flex;
   justify-content: space-between;
-  max-width: 220px;
-  padding-left: 19px;
+  max-width: 200px;
+}
+
+/* The panel's own breakpoints live here, after the column definition, so they
+   are not overridden by source order. */
+@media (max-width: 1180px) {
+  .builder-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .builder-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-20);
+  }
+  .builder-head p {
+    flex: 1 1 100%;
+  }
+  .zone-picker,
+  .zone-legend {
+    max-width: 100%;
+  }
+  .check-scroll {
+    max-height: 168px;
+  }
 }
 
 /* ---------- player overlay ---------- */
