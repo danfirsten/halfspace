@@ -45,7 +45,7 @@ const report = {};
   // First meaningful paint: header, preset chips and the skeleton pitches —
   // everything the contract requires on screen before DuckDB-WASM is parsed.
   await page.waitForSelector('.preset');
-  await page.waitForSelector('.skeleton-card svg, .card svg');
+  await page.waitForSelector('.card-skeleton svg, .card svg');
   report.fmp_ms = Date.now() - t0;
   report.paint = await page.evaluate(() =>
     Object.fromEntries(
@@ -80,12 +80,19 @@ const report = {};
   await idle(page);
   await page.waitForTimeout(700);
   await shot(page, 'natural-language');
-  report.nl_note = (await page.locator('.note-box').first().innerText()).replace(/\s+/g, ' ');
+  report.nl_note = (await page.locator('.parse-note').first().innerText()).replace(/\s+/g, ' ');
+  report.nl_dropped_chips = await page.locator('.chip-dropped').allInnerTexts();
 
   await page.click('.preset-row .ghost-btn');
   await page.waitForSelector('.builder');
+  // Two zones selected, so the picker is shown doing its job.
+  await page.locator('.zone-cell').nth(2).click();
+  await page.locator('.zone-cell').nth(5).click();
+  await idle(page);
   await page.waitForTimeout(500);
   await shot(page, 'filter-builder');
+  await page.locator('.builder-head .ghost-btn').click();
+  await idle(page);
   await page.click('.preset-row .ghost-btn');
 
   await page.click('.preset >> nth=4');
@@ -103,7 +110,7 @@ const report = {};
   report.player_360_coverage = await page.locator('.pstat').last().locator('.v').innerText();
 
   // Cold "find similar": includes the one-time 2.66 MB similarity.parquet fetch.
-  await page.locator('.player-head-actions .ghost-btn', { hasText: 'Find similar' }).click();
+  await page.locator('.player-rail-actions .ghost-btn', { hasText: 'Find similar' }).click();
   await idle(page);
   report.similar_cold_ms = await page.locator('.results-head .num').last().innerText();
   await page.waitForTimeout(800);
