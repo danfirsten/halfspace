@@ -10,7 +10,7 @@
     {
       "file": "xg-distribution.json",
       "title": "xG of the 2,315 phases that ended in a shot",
-      "caption": "Log-scaled count, 0.05 bins. Most shooting chances are small ones \u2014 1,050 of the 2,315 sit below 0.05 xG. Gold is the 253 phases that scored."
+      "caption": "Symlog-scaled count, 0.05 bins. Most shooting chances are small ones \u2014 1,050 of the 2,315 sit below 0.05 xG. Gold is the 253 phases that scored."
     },
     {
       "file": "start-zone-heatmap.json",

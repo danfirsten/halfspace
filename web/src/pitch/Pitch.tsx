@@ -25,8 +25,14 @@ const PAD = 4;
 
 export interface PitchProps {
   children?: ReactNode;
-  /** Stroke width for markings, in pitch units. Thumbnails need it heavier. */
+  /**
+   * Marking weight in PITCH UNITS, so it scales with the drawing. A thumbnail
+   * renders ~3.5 device px per unit and the player ~7.5, which is why the two
+   * pass different values to land on the same hairline on screen.
+   */
   lineWidth?: number;
+  /** Text size for the direction label, in pitch units. Same reasoning. */
+  labelSize?: number;
   /** Draw the "attacking →" wording as well as the arrow. */
   labelled?: boolean;
   /** Render the 3 × 3 zone grid faintly behind the markings. */
@@ -38,6 +44,7 @@ export interface PitchProps {
 export function Pitch({
   children,
   lineWidth = 0.28,
+  labelSize = 2.6,
   labelled = true,
   showZones = false,
   className,
@@ -48,7 +55,6 @@ export function Pitch({
     fill: 'none',
     stroke: line,
     strokeWidth: lineWidth,
-    vectorEffect: 'non-scaling-stroke' as const,
   };
 
   return (
@@ -112,7 +118,7 @@ export function Pitch({
       <rect x={-2} y={36} width={2} height={8} {...common} />
       <rect x={120} y={36} width={2} height={8} {...common} />
 
-      <AttackingArrow labelled={labelled} />
+      <AttackingArrow labelled={labelled} size={labelSize} weight={lineWidth} />
 
       {children}
     </svg>
@@ -124,34 +130,43 @@ export function Pitch({
  * are already normalized so the possession team attacks left → right, and the
  * only way that is not a silent assumption is to draw it.
  */
-function AttackingArrow({ labelled }: { labelled: boolean }) {
-  const y = PITCH_WIDTH + PAD - 1.4;
+function AttackingArrow({
+  labelled,
+  size,
+  weight,
+}: {
+  labelled: boolean;
+  size: number;
+  weight: number;
+}) {
+  const y = PITCH_WIDTH + PAD - size * 0.55;
+  // The label sits left of the arrow when there is room for the word, and the
+  // arrow alone leads on a thumbnail — the word "attacking" still follows it.
+  const textX = 3;
+  const arrowStart = textX + (labelled ? size * 5.2 : size * 4.4);
+  const arrowEnd = arrowStart + size * 3.2;
+  const head = size * 0.62;
   return (
-    <g opacity={0.7} aria-hidden="true">
-      <line
-        x1={labelled ? 26 : 3}
-        y1={y}
-        x2={labelled ? 38 : 13}
-        y2={y}
-        stroke="var(--text-dim)"
-        strokeWidth={0.35}
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        d={`M ${labelled ? 38 : 13} ${y} l -2.1 -1.1 v 2.2 z`}
-        fill="var(--text-dim)"
-      />
+    <g opacity={0.75} aria-hidden="true">
       <text
-        x={labelled ? 24 : 14.6}
-        y={y + 0.95}
-        textAnchor={labelled ? 'end' : 'start'}
+        x={textX}
+        y={y + size * 0.35}
         fill="var(--text-dim)"
-        fontSize={labelled ? 2.9 : 2.6}
-        letterSpacing={0.1}
+        fontSize={size}
+        letterSpacing={size * 0.03}
         fontFamily="var(--font)"
       >
         attacking
       </text>
+      <line
+        x1={arrowStart}
+        y1={y}
+        x2={arrowEnd}
+        y2={y}
+        stroke="var(--text-dim)"
+        strokeWidth={weight * 1.2}
+      />
+      <path d={`M ${arrowEnd} ${y} l ${-head * 1.5} ${-head} v ${head * 2} z`} fill="var(--text-dim)" />
     </g>
   );
 }

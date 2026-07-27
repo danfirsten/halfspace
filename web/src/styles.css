@@ -401,6 +401,60 @@ a:hover {
   }
 }
 
+@media (max-width: 760px) {
+  .header-inner {
+    padding-top: 11px;
+    padding-bottom: 11px;
+    gap: 9px;
+  }
+  .brand {
+    flex: 1 1 100%;
+  }
+  .search {
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .search .badge-offline {
+    display: none;
+  }
+  .dataset-line {
+    order: 2;
+    flex: 1 1 100%;
+    font-size: 11.5px;
+  }
+  /* One swipeable row rather than five stacked pills. */
+  .preset-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    margin: 0 -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .preset-row::-webkit-scrollbar {
+    display: none;
+  }
+  .builder {
+    max-height: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Chips swipe rather than stack, so results stay above the fold. */
+  .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -14px;
+    padding: 0 14px;
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex: 0 0 auto;
+  }
+}
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
@@ -411,6 +465,9 @@ a:hover {
   .controls-inner {
     padding-left: 14px;
     padding-right: 14px;
+  }
+  .player-pitch {
+    max-width: 100%;
   }
 }
 
@@ -451,10 +508,11 @@ a:hover {
 }
 
 .card-body {
-  padding: 9px 11px 11px;
+  padding: 9px 11px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  flex: 1;
 }
 
 .card-teams {
@@ -490,25 +548,30 @@ a:hover {
 .card-stats {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 7px;
   font-size: 11.5px;
   color: var(--text-dim);
-  margin-top: 1px;
+  min-height: 19px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.card-micro {
+  margin-top: auto;
+  padding-top: 3px;
+}
+
+.card-stats .grow {
+  flex: 1;
 }
 
 .card-stats .sep {
   color: #39424a;
 }
 
-.card-actions {
-  display: flex;
-  gap: 6px;
-  padding: 0 11px 10px;
-}
-
 .mini-btn {
   background: none;
+  flex: 0 0 auto;
   border: 1px solid var(--hairline);
   color: var(--text-dim);
   border-radius: 4px;
@@ -730,8 +793,11 @@ a:hover {
   padding: 16px;
   margin-top: 4px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px 22px;
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  align-items: start;
 }
 
 .builder-group {
@@ -817,10 +883,11 @@ a:hover {
 }
 
 .range-row label {
-  flex: 0 0 96px;
+  flex: 0 0 118px;
   display: flex;
   align-items: center;
   gap: 5px;
+  line-height: 1.2;
 }
 
 .range-row input[type='number'] {
@@ -843,6 +910,8 @@ a:hover {
 }
 
 select {
+  min-width: 0;
+  max-width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--hairline);
   border-radius: 4px;
@@ -854,36 +923,46 @@ select:focus {
   border-color: var(--accent-dim);
 }
 
-.zone-grid {
+.zone-picker {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 26px);
-  gap: 2px;
+  grid-template-columns: 16px repeat(3, 1fr);
+  gap: 3px;
   width: 100%;
-  max-width: 230px;
-  border: 1px solid var(--hairline);
-  border-radius: 4px;
-  padding: 2px;
-  background: var(--turf);
+  max-width: 220px;
+  align-items: center;
+}
+
+.zone-axis {
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: #6d7681;
+  text-align: center;
+  text-transform: uppercase;
+}
+.zone-axis.row {
+  text-align: right;
+  padding-right: 2px;
 }
 
 .zone-cell {
-  background: var(--surface-2);
-  border: 0;
-  border-radius: 2px;
+  background: var(--turf);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  height: 26px;
   color: #6d7681;
   font-size: 10px;
   cursor: pointer;
+  padding: 0;
   transition:
     background var(--fast) var(--ease),
-    color var(--fast) var(--ease);
+    border-color var(--fast) var(--ease);
 }
 .zone-cell:hover {
-  color: var(--text);
+  border-color: #4a545d;
 }
 .zone-cell[aria-pressed='true'] {
-  background: rgba(63, 182, 168, 0.35);
-  color: #eafffb;
+  background: rgba(63, 182, 168, 0.34);
+  border-color: var(--accent-dim);
 }
 
 .zone-legend {
@@ -891,7 +970,8 @@ select:focus {
   color: #6d7681;
   display: flex;
   justify-content: space-between;
-  max-width: 230px;
+  max-width: 220px;
+  padding-left: 19px;
 }
 
 /* ---------- player overlay ---------- */
@@ -1003,11 +1083,23 @@ select:focus {
   padding: 14px 18px 18px;
 }
 
+/* The drawing is 128 × 88 units including its margin (aspect 1.4545). Capping
+   the CONTAINER width rather than the SVG height keeps the pitch bounded
+   without letterboxing turf around it, so the transport controls and the stats
+   are always on screen with the pitch. */
 .player-pitch {
   background: var(--turf);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   overflow: hidden;
+  width: 100%;
+  max-width: calc(min(54vh, 540px) * 1.4545);
+  margin: 0 auto;
+}
+
+.player-pitch svg {
+  width: 100%;
+  height: auto;
 }
 
 .transport {

@@ -307,14 +307,14 @@ export function PhasePlayer({
 
         <div className="player-body">
           <div className="player-pitch">
-            <Pitch lineWidth={0.3} labelled title={`${phase.team_name} phase, attacking left to right`}>
+            <Pitch lineWidth={0.17} labelSize={1.5} labelled title={`${phase.team_name} phase, attacking left to right`}>
               {/* visible camera area for the current frame — what the 360 saw */}
               {activeFrame && activeFrame.frame.visible_area.length >= 6 ? (
                 <polygon
                   points={polygonPoints(activeFrame.frame.visible_area)}
                   fill="rgba(63,182,168,0.045)"
                   stroke="rgba(63,182,168,0.16)"
-                  strokeWidth={0.2}
+                  strokeWidth={0.16}
                 />
               ) : null}
 

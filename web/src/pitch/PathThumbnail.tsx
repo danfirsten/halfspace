@@ -70,15 +70,15 @@ export function PathThumbnail({ pathXy, index, startZoneLabel }: Props) {
   const startY = pathXy[1];
 
   return (
-    <Pitch lineWidth={0.22} labelled={false} title={startZoneLabel}>
+    <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} title={startZoneLabel}>
       <g ref={hostRef}>
         {/* the whole trajectory, faint — the shape is readable even paused */}
         <path
           ref={pathRef}
           d={d}
           fill="none"
-          stroke="#4d5a66"
-          strokeWidth={0.7}
+          stroke="#5a6773"
+          strokeWidth={0.55}
           strokeLinecap="round"
           strokeLinejoin="round"
           opacity={0.55}
@@ -89,7 +89,7 @@ export function PathThumbnail({ pathXy, index, startZoneLabel }: Props) {
           d={d}
           fill="none"
           stroke="var(--ball)"
-          strokeWidth={1.1}
+          strokeWidth={1.0}
           strokeLinecap="round"
           strokeLinejoin="round"
           opacity={0.9}

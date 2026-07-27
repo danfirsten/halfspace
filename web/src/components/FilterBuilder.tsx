@@ -5,6 +5,7 @@
  * writes back through `fromBuilderState`, so the builder is never a second
  * source of truth — it is a view of the query, exactly like the chips are.
  */
+import { Fragment } from 'react';
 import { humanValue } from '../dsl/compile';
 import {
   fieldSpec,
@@ -145,6 +146,7 @@ export function FilterBuilder({ query, onChange, teams }: Props) {
             <span>own goal</span>
             <span>attacking →</span>
           </div>
+
         </div>
       ))}
 
@@ -252,6 +254,19 @@ export function FilterBuilder({ query, onChange, teams }: Props) {
  * left channel on top. It is the same partition the ingest used, so what you
  * click is exactly what gets filtered.
  */
+const THIRD_SHORT: Record<string, string> = {
+  def_third: 'def',
+  mid_third: 'mid',
+  final_third: 'final',
+};
+const CHANNEL_SHORT: Record<string, string> = { left: 'L', centre: 'C', right: 'R' };
+
+/**
+ * The 3 × 3 zone picker, laid out the way the pitch is drawn: thirds run left
+ * to right in the attacking direction, channels top to bottom with y = 0 (the
+ * attacking team's left touchline) on top. Clicking a cell filters exactly that
+ * zone — it is the same partition the ingest used.
+ */
 function ZonePicker({
   selected,
   onToggle,
@@ -260,25 +275,32 @@ function ZonePicker({
   onToggle: (zone: Zone) => void;
 }) {
   return (
-    <div className="zone-grid" role="group" aria-label="Pitch zones">
-      {CHANNELS.map((channel) =>
-        THIRDS.map((third) => {
-          const zone = `${third}_${channel}` as Zone;
-          const on = selected.includes(zone);
-          return (
-            <button
-              type="button"
-              key={zone}
-              className="zone-cell"
-              aria-pressed={on}
-              aria-label={humanValue('start_zone', zone)}
-              onClick={() => onToggle(zone)}
-            >
-              {channel}
-            </button>
-          );
-        }),
-      )}
+    <div className="zone-picker" role="group" aria-label="Pitch zones">
+      <span />
+      {THIRDS.map((third) => (
+        <span className="zone-axis" key={third}>
+          {THIRD_SHORT[third]}
+        </span>
+      ))}
+      {CHANNELS.map((channel) => (
+        <Fragment key={channel}>
+          <span className="zone-axis row">{CHANNEL_SHORT[channel]}</span>
+          {THIRDS.map((third) => {
+            const zone = `${third}_${channel}` as Zone;
+            return (
+              <button
+                type="button"
+                key={zone}
+                className="zone-cell"
+                aria-pressed={selected.includes(zone)}
+                title={humanValue('start_zone', zone)}
+                aria-label={humanValue('start_zone', zone)}
+                onClick={() => onToggle(zone)}
+              />
+            );
+          })}
+        </Fragment>
+      ))}
     </div>
   );
 }

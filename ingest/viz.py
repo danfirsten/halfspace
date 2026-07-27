@@ -129,6 +129,8 @@ def halfspace_theme() -> dict:
 def write(name: str, chart: alt.Chart, title: str, caption: str, rows: int) -> dict:
     spec = chart.to_dict()
     spec.update(halfspace_theme())
+    # "fit-x" plus width:"container" lets vega-embed size the plot to the card,
+    # which is what makes the grid responsive without re-generating specs.
     spec["autosize"] = {"type": "fit-x", "contains": "padding", "resize": True}
     (OUT / f"{name}.json").write_text(json.dumps(spec, separators=(",", ":")), encoding="utf-8")
     print(f"  {name}.json  ({rows} aggregated rows)")
@@ -184,7 +186,7 @@ def chart_outcome_by_start_type(con: duckdb.DuckDBPyConnection) -> dict:
                 alt.Tooltip("share:Q", title="share", format=".1%"),
             ],
         )
-        .properties(height=alt.Step(19))
+        .properties(height=alt.Step(19), width="container")
     )
     return write(
         "outcome-by-start-type",
@@ -223,7 +225,13 @@ def chart_xg_distribution(con: duckdb.DuckDBPyConnection) -> dict:
                 scale=alt.Scale(domain=[0, 1]),
             ),
             x2="bin2:Q",
-            y=alt.Y("n:Q", title="phases", scale=alt.Scale(type="symlog")),
+            y=alt.Y(
+                "n:Q",
+                title="phases (symlog scale)",
+                # symlog, not log: it is linear near zero, so the bins holding a
+                # handful of phases are still drawn instead of vanishing.
+                scale=alt.Scale(type="symlog"),
+            ),
             color=alt.Color(
                 "result:N",
                 title=None,
@@ -236,13 +244,13 @@ def chart_xg_distribution(con: duckdb.DuckDBPyConnection) -> dict:
             ],
         )
         .transform_calculate(bin2="datum.bin + 0.05")
-        .properties(height=190)
+        .properties(height=190, width="container")
     )
     return write(
         "xg-distribution",
         chart,
         "xG of the 2,315 phases that ended in a shot",
-        "Log-scaled count, 0.05 bins. Most shooting chances are small ones — 1,050 of the "
+        "Symlog-scaled count, 0.05 bins. Most shooting chances are small ones — 1,050 of the "
         "2,315 sit below 0.05 xG. Gold is the 253 phases that scored.",
         df.height,
     )
@@ -271,7 +279,12 @@ def chart_start_zone_heatmap(con: duckdb.DuckDBPyConnection) -> dict:
 
     base = alt.Chart(df.select("Third", "Channel", "n", "shot_rate", "mean_xg"))
     heat = base.mark_rect(stroke=BG, strokeWidth=2).encode(
-        x=alt.X("Third:N", title="third (attacking →)", sort=["Defensive", "Middle", "Final"]),
+        x=alt.X(
+            "Third:N",
+            title="third (attacking →)",
+            sort=["Defensive", "Middle", "Final"],
+            axis=alt.Axis(labelAngle=0),
+        ),
         y=alt.Y("Channel:N", title="channel", sort=["Left", "Centre", "Right"]),
         color=alt.Color(
             "shot_rate:Q",
@@ -288,14 +301,15 @@ def chart_start_zone_heatmap(con: duckdb.DuckDBPyConnection) -> dict:
         ],
     )
     labels = base.mark_text(fontSize=10, font=FONT, dy=0).encode(
-        x=alt.X("Third:N", sort=["Defensive", "Middle", "Final"]),
+        x=alt.X("Third:N", sort=["Defensive", "Middle", "Final"], axis=alt.Axis(labelAngle=0)),
         y=alt.Y("Channel:N", sort=["Left", "Centre", "Right"]),
         text=alt.Text("shot_rate:Q", format=".0%"),
-        color=alt.condition(alt.datum.shot_rate > 0.18, alt.value("#06231f"), alt.value(TEXT)),
+        # Only the brightest cell is light enough to need dark text on it.
+        color=alt.condition(alt.datum.shot_rate > 0.42, alt.value("#06231f"), alt.value(TEXT)),
     )
     return write(
         "start-zone-heatmap",
-        (heat + labels).properties(height=150),
+        (heat + labels).properties(height=170, width="container"),
         "Where a phase starts, and how often it ends in a shot",
         "The 3 × 3 search grid, in the attacking team's frame. Only 199 phases start in the "
         "centre of the final third, and 55.3% of them end in a shot — against 8.9% for a "
@@ -348,7 +362,7 @@ def chart_progression_vs_duration(con: duckdb.DuckDBPyConnection) -> dict:
             ],
         )
         .transform_calculate(dur2="datum.dur_bin + 2.5", prog2="datum.prog_bin + 7.5")
-        .properties(height=200)
+        .properties(height=205, width="container")
     )
     return write(
         "progression-vs-duration",

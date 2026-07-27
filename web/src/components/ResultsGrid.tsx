@@ -59,8 +59,7 @@ const ResultCard = memo(function ResultCard({
   onSimilar: (phaseId: string) => void;
 }) {
   return (
-    <div className="card-wrap">
-      <div
+    <div
         className="card"
         role="button"
         tabIndex={0}
@@ -93,32 +92,33 @@ const ResultCard = memo(function ResultCard({
             {matchStage(row.match_label)} · <span className="num">{clock(row.minute, row.second)}</span>
           </div>
 
+          {/* Two fixed rows, so every card in the grid is exactly as tall as
+              every other one whatever the phase happens to contain. */}
           <div className="card-stats">
             <span className={outcomeBadgeClass(row.outcome)}>{outcomeLabel(row.outcome)}</span>
             {row.xg > 0 ? <span className="xg-pill num">{fmtXg(row.xg)} xG</span> : null}
-            <span className="sep">·</span>
+          </div>
+
+          <div className="card-stats card-micro">
             <span className="num">{seconds(row.duration_s)}</span>
             <span className="sep">·</span>
             <span className="num">{row.n_passes} pass</span>
             <span className="sep">·</span>
             <span>{startTypeLabel(row.start_type)}</span>
+            <span className="grow" />
+            <button
+              type="button"
+              className="mini-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSimilar(row.phase_id);
+              }}
+            >
+              Similar
+            </button>
           </div>
         </div>
-
-        <div className="card-actions">
-          <button
-            type="button"
-            className="mini-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSimilar(row.phase_id);
-            }}
-          >
-            Find similar
-          </button>
-        </div>
       </div>
-    </div>
   );
 });
 
@@ -133,7 +133,7 @@ export function SkeletonGrid({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div className="skeleton-card" key={i}>
           <div style={{ background: 'var(--turf)', opacity: 0.7 }}>
-            <Pitch lineWidth={0.22} labelled={false} />
+            <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
           </div>
           <div className="skeleton-line shimmer" style={{ width: '58%' }} />
           <div className="skeleton-line shimmer" style={{ width: '38%', height: 7 }} />

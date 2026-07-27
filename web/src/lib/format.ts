@@ -13,7 +13,7 @@ export function metres(value: number): string {
 }
 
 export function xg(value: number): string {
-  return value.toFixed(2).replace(/^0/, '.');
+  return value.toFixed(2);
 }
 
 export function percent(fraction: number): string {
