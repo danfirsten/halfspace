@@ -29,15 +29,12 @@ MIN_360_BYTES = 50_000
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-#: Raw StatsBomb JSON cache. NEVER inside the repository: licence clause 1.2.1
-#: forbids redistributing the data, so it lives in a scratch directory.
+#: Raw StatsBomb JSON cache (~1.1 GB). NEVER inside the repository: licence
+#: clause 1.2.1 forbids redistributing the data, so it defaults to a user cache
+#: directory. Point `HALFSPACE_RAW_DIR` anywhere else you like.
 RAW_DIR = Path(
-    os.environ.get(
-        "HALFSPACE_RAW_DIR",
-        "/tmp/claude-0/-home-user-halfspace/"
-        "a694d7b9-aa9e-541f-bd07-c557653c0680/scratchpad/statsbomb-raw",
-    )
-)
+    os.environ.get("HALFSPACE_RAW_DIR", Path.home() / ".cache" / "halfspace" / "statsbomb-raw")
+).expanduser()
 
 #: Where the derived, publishable Parquet artifacts go.
 OUT_DIR = Path(os.environ.get("HALFSPACE_OUT_DIR", REPO_ROOT / "web" / "public" / "data"))

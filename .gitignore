@@ -14,7 +14,7 @@ dist/
 .vite/
 
 # Raw StatsBomb data must never enter this repo (licence clause 1.2.1 forbids
-# redistribution). It lives in the scratchpad only.
+# redistribution). It lives in $HALFSPACE_RAW_DIR, outside this tree.
 statsbomb-raw/
 data/events/
 data/three-sixty/

@@ -87,7 +87,7 @@ web app reads `similarity.parquet` either way — nothing in `web/` changes.
 
 | | Path |
 |---|---|
-| Raw JSON cache | `$HALFSPACE_RAW_DIR`, default a scratch dir **outside the repo** |
+| Raw JSON cache | `$HALFSPACE_RAW_DIR`, default `~/.cache/halfspace/statsbomb-raw` — **outside the repo** |
 | Built artifacts | `$HALFSPACE_OUT_DIR`, default `web/public/data/` |
 
 **Raw StatsBomb JSON must never enter the repository.** Licence clause 1.2.1
