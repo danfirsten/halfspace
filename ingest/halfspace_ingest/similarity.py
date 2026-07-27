@@ -74,6 +74,14 @@ def _resample_flat(path: np.ndarray, k: int) -> np.ndarray:
     return np.stack([path[:, 2 * idx], path[:, 2 * idx + 1]], axis=2).reshape(path.shape[0], 2 * k)
 
 
+def moments(numeric: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Per-feature mean and standard deviation, with zero-variance guarded."""
+    mu = numeric.mean(axis=0)
+    sd = numeric.std(axis=0)
+    sd[sd < 1e-9] = 1.0
+    return mu, sd
+
+
 def build_vectors(
     numeric: np.ndarray,
     booleans: np.ndarray,
@@ -82,20 +90,29 @@ def build_vectors(
     start_zone_idx: np.ndarray,
     end_zone_idx: np.ndarray,
     path_xy: np.ndarray,
+    stats: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> np.ndarray:
-    """Assemble and L2-normalize the phase vectors. Returns (n, DIM) float32."""
+    """Assemble and L2-normalize the phase vectors. Returns (n, DIM) float32.
+
+    ``stats`` supplies the (mean, sd) used to standardize the numeric block.
+    The build leaves it None — the moments are the dataset's own. The P2
+    evaluation (``ingest/encoder/``) passes the dataset moments explicitly so a
+    *half* of a phase is scored on the same scale as a whole one.
+
+    A categorical index of ``-1`` means "this label is not defined for this
+    row" and produces an all-zero one-hot block; the build never uses it.
+    """
     n = numeric.shape[0]
 
-    mu = numeric.mean(axis=0)
-    sd = numeric.std(axis=0)
-    sd[sd < 1e-9] = 1.0
+    mu, sd = moments(numeric) if stats is None else stats
     num = np.clip((numeric - mu) / sd, -CLIP, CLIP) * W_NUMERIC
 
     bools = booleans.astype(np.float64) * W_BOOL
 
     def one_hot(idx: np.ndarray, size: int, weight: float) -> np.ndarray:
         m = np.zeros((n, size))
-        m[np.arange(n), idx] = weight
+        on = np.asarray(idx) >= 0
+        m[np.arange(n)[on], np.asarray(idx)[on]] = weight
         return m
 
     st = one_hot(start_type_idx, len(START_TYPES), W_START_TYPE)

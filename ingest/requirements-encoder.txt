@@ -1,0 +1,15 @@
+# P2 learned-encoder extras. Kept out of requirements.txt so that building the
+# published artifacts never needs a 4 GB dependency tree.
+#
+#   ./.venv/bin/pip install -r requirements-encoder.txt
+#
+# Prefer the CPU-only wheel if your network allows it — it is ~200 MB instead of
+# ~2.5 GB, and nothing here ever touches a GPU:
+#
+#   ./.venv/bin/pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+#
+# The pin below is the default-PyPI wheel, which is what this box could reach.
+torch==2.13.0
+
+# Everything else the encoder needs (polars, pyarrow, numpy, duckdb, pytest) is
+# already pinned in requirements.txt.
