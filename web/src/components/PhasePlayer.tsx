@@ -285,25 +285,13 @@ export function PhasePlayer({
             </div>
             <div className="player-sub">
               {phase.match_label} · <span className="num">{clock(phase.minute, phase.second)}</span> ·{' '}
-              {startTypeLabel(phase.start_type)} · <span className="num">{phase.phase_id}</span>
+              {startTypeLabel(phase.start_type)}
             </div>
           </div>
 
+          {/* Navigation only. The two things you can do with THIS phase live in
+              the rail, next to the readings they act on. */}
           <div className="player-head-actions">
-            {onPin ? (
-              <button
-                type="button"
-                className="ghost-btn"
-                aria-pressed={pinned}
-                title={pinned ? 'Remove from the report (p)' : 'Add to the report (p)'}
-                onClick={() => onPin(phase.phase_id)}
-              >
-                {pinned ? 'In report ✓' : 'Add to report'}
-              </button>
-            ) : null}
-            <button type="button" className="ghost-btn" onClick={() => onSimilar(phase.phase_id)}>
-              Find similar
-            </button>
             <button
               type="button"
               className="icon-btn"
@@ -312,7 +300,7 @@ export function PhasePlayer({
               aria-label="Previous result"
               title="Previous result (←)"
             >
-              ‹
+              <Chevron dir="left" />
             </button>
             <button
               type="button"
@@ -322,16 +310,17 @@ export function PhasePlayer({
               aria-label="Next result"
               title="Next result (→)"
             >
-              ›
+              <Chevron dir="right" />
             </button>
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close player" title="Close (Esc)">
-              ✕
+              <Cross />
             </button>
           </div>
         </header>
 
         <div className="player-body">
-          <div className="player-pitch">
+          <div className="player-main">
+            <div className="player-pitch">
             <Pitch lineWidth={0.17} labelSize={1.5} labelled title={`${phase.team_name} phase, attacking left to right`}>
               {/* visible camera area for the current frame — what the 360 saw */}
               {activeFrame && activeFrame.frame.visible_area.length >= 6 ? (
@@ -377,7 +366,7 @@ export function PhasePlayer({
               aria-label={playing ? 'Pause' : 'Play'}
               title={playing ? 'Pause (space)' : 'Play (space)'}
             >
-              {playing ? '❚❚' : '▶'}
+              {playing ? <PauseIcon /> : <PlayIcon />}
             </button>
             <span className="clock num">
               <strong>{displayTime.toFixed(1)}s</strong> / {duration.toFixed(1)}s
@@ -416,7 +405,11 @@ export function PhasePlayer({
               {hovered !== null && markers[hovered] ? (
                 <span
                   className="marker-tip"
-                  style={{ left: `${Math.min(100, (markers[hovered].t_offset_s / duration) * 100)}%` }}
+                  // Clamped so a tick near either end does not push its label
+                  // off the side of the dialog.
+                  style={{
+                    left: `clamp(88px, ${Math.min(100, (markers[hovered].t_offset_s / duration) * 100)}%, calc(100% - 88px))`,
+                  }}
                 >
                   <strong>{markers[hovered].type_name}</strong>
                   {markers[hovered].outcome_name ? ` (${markers[hovered].outcome_name})` : ''}{' '}
@@ -440,8 +433,12 @@ export function PhasePlayer({
             </div>
           </div>
 
-          {/* ---- honest stats ---- */}
-          <div className="player-stats">
+          </div>
+
+          {/* ---- the rail: what the phase measured, and what the picture is
+                  allowed to claim ---- */}
+          <aside className="player-rail">
+            <div className="player-stats">
             <Stat k="Duration" v={seconds(phase.duration_s)} />
             <Stat k="Passes" v={String(phase.n_passes)} />
             <Stat k="Players" v={String(phase.n_players)} />
@@ -455,21 +452,54 @@ export function PhasePlayer({
             />
           </div>
 
-          <div className="legend">
-            <span>
-              <i style={{ background: 'var(--team-a)' }} /> {phase.team_name} (in possession)
-            </span>
-            <span>
-              <i style={{ background: 'var(--team-b)' }} /> {phase.opponent_name}
-            </span>
-            <span>
-              <i style={{ background: 'transparent', border: '1.5px solid var(--accent)' }} /> goalkeeper
-            </span>
-            <span>
-              <i style={{ background: 'var(--ball)' }} /> ball
-            </span>
-          </div>
+            {/* A legend for marks that are not on the pitch is a small lie, so
+                the player entries appear only when there are freeze frames to
+                draw them from. */}
+            <div className="legend">
+              {frames.length ? (
+                <>
+                  <span>
+                    <i style={{ background: 'var(--team-a)' }} /> {phase.team_name} (in possession)
+                  </span>
+                  <span>
+                    <i style={{ background: 'var(--team-b)' }} /> {phase.opponent_name}
+                  </span>
+                  <span>
+                    <i style={{ background: 'transparent', border: '1.5px solid var(--accent)' }} />{' '}
+                    goalkeeper
+                  </span>
+                </>
+              ) : null}
+              <span>
+                <i style={{ background: 'var(--ball)' }} /> ball
+              </span>
+            </div>
 
+            <div className="player-rail-actions">
+              {onPin ? (
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  aria-pressed={pinned}
+                  title={pinned ? 'Remove from the report (p)' : 'Add to the report (p)'}
+                  onClick={() => onPin(phase.phase_id)}
+                >
+                  {pinned ? 'In report ✓' : 'Add to report'}
+                </button>
+              ) : null}
+              <button type="button" className="ghost-btn" onClick={() => onSimilar(phase.phase_id)}>
+                Find similar
+              </button>
+            </div>
+
+            <p className="player-prov">
+              <span className="num">{frames.length}</span> freeze frames over{' '}
+              <span className="num">{phase.n_events}</span> events · phase{' '}
+              <span className="num">{phase.phase_id}</span>
+            </p>
+          </aside>
+
+          <div className="player-notes">
           {loading ? (
             <div className="status-line">
               <span className="spinner" /> loading events and 360 frames for this match…
@@ -498,9 +528,59 @@ export function PhasePlayer({
               alone. 3.4% of phases have no 360 coverage.
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/* Icons rather than text glyphs. `▶`, `❚❚`, `‹`, `›` and `✕` render at
+   whatever weight and baseline the font decides, which on a 32px control reads
+   as five different button vocabularies. */
+function PlayIcon() {
+  return (
+    <svg width="12" height="13" viewBox="0 0 12 13" aria-hidden="true">
+      <path d="M2 1.4 10.4 6.5 2 11.6z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg width="11" height="12" viewBox="0 0 11 12" aria-hidden="true">
+      <rect x="1" y="0.6" width="3.2" height="10.8" rx="1" fill="currentColor" />
+      <rect x="6.8" y="0.6" width="3.2" height="10.8" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function Chevron({ dir }: { dir: 'left' | 'right' }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d={dir === 'left' ? 'M8.6 3.2 4.8 7l3.8 3.8' : 'M5.4 3.2 9.2 7l-3.8 3.8'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Cross() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
+      <path
+        d="M3 3l7 7M10 3l-7 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
