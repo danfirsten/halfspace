@@ -60,7 +60,12 @@ function toNumber(value: unknown): number {
   return typeof value === 'bigint' ? Number(value) : (value as number);
 }
 
-function asPhase(row: Record<string, unknown>): PhaseRow {
+/**
+ * One DuckDB row → one `PhaseRow`. Exported because the report page queries
+ * phases by id and must get rows that are byte-identical in shape to the ones
+ * the search returns — the same card renders both.
+ */
+export function asPhase(row: Record<string, unknown>): PhaseRow {
   return {
     ...(row as unknown as PhaseRow),
     match_id: toNumber(row.match_id),

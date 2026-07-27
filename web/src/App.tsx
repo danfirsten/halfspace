@@ -12,8 +12,14 @@
  *
  * There is no state library. The whole app has one query, one result set and
  * one open phase; useState and a handful of effects express that honestly.
+ * (Reports are the one exception — they are shared by four components at once
+ * and live in a 60-line store; see report/store.ts.)
+ *
+ * Two routes, both in the fragment: `#phase=<id>` opens the player, and
+ * `#report=<id|z:…>` swaps the search view for a report. The report module is
+ * lazy: someone who never opens one never downloads it.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Insights } from './charts/Insights';
 import { FilterBuilder } from './components/FilterBuilder';
 import { Footer } from './components/Footer';
@@ -24,9 +30,14 @@ import { parseText, SearchBar } from './components/SearchBar';
 import { parseQuery, type PhaseQuery } from './dsl/schema';
 import { DEFAULT_PRESET, PRESETS } from './dsl/presets';
 import { HalfspaceData, type SearchResult } from './duck/data';
-import type { PhaseEventRow, PhaseFrameRow, PhaseRow } from './duck/types';
 import { integer } from './lib/format';
 import { removeFilter } from './lib/builderState';
+import { readHashParam, writeHashParam } from './lib/hash';
+import { usePhaseDetail } from './lib/usePhaseDetail';
+import { countPhases, hasPhase, MAX_PHASES_PER_REPORT } from './report/model';
+import { reportStore, useReports } from './report/store';
+
+const ReportPage = lazy(() => import('./report/ReportPage'));
 
 const API_CONFIGURED = Boolean(import.meta.env.VITE_API_URL);
 
@@ -50,12 +61,11 @@ export default function App() {
   const [parseSource, setParseSource] = useState<'api' | 'offline' | null>(null);
   const [similarPin, setSimilarPin] = useState<SimilarPin | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [pinNote, setPinNote] = useState<string | null>(null);
 
-  const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
-  const [openPhase, setOpenPhase] = useState<PhaseRow | null>(null);
-  const [events, setEvents] = useState<PhaseEventRow[]>([]);
-  const [frames, setFrames] = useState<PhaseFrameRow[]>([]);
-  const [phaseLoading, setPhaseLoading] = useState(false);
+  const [hash, setHash] = useState<string>(() =>
+    typeof window === 'undefined' ? '' : window.location.hash,
+  );
 
   // ---- boot ------------------------------------------------------------------
   useEffect(() => {
@@ -106,64 +116,40 @@ export default function App() {
     };
   }, [data, query, similarPin]);
 
-  // ---- deep links (#phase=…) -------------------------------------------------
+  // ---- routing (#phase=… , #report=…) ----------------------------------------
   useEffect(() => {
-    const read = () => {
-      const match = /#phase=([^&]+)/.exec(window.location.hash);
-      setOpenPhaseId(match ? decodeURIComponent(match[1]) : null);
-    };
+    const read = () => setHash(window.location.hash);
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
   }, []);
 
-  const openPhaseById = useCallback((phaseId: string | null) => {
-    if (phaseId) window.location.hash = `phase=${encodeURIComponent(phaseId)}`;
-    else if (window.location.hash) {
+  const setHashParam = useCallback((key: string, value: string | null) => {
+    const next = writeHashParam(window.location.hash, key, value);
+    if (next) window.location.hash = next;
+    else {
       history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      setOpenPhaseId(null);
+      setHash('');
     }
   }, []);
 
+  const reportTarget = readHashParam(hash, 'report');
+  // While a report is open it owns the player, so that prev/next walks the
+  // report's phases rather than a search the reader may never have run.
+  const openPhaseId = reportTarget ? null : readHashParam(hash, 'phase');
+
+  const openPhaseById = useCallback(
+    (phaseId: string | null) => setHashParam('phase', phaseId),
+    [setHashParam],
+  );
+
   // ---- load the open phase's events and frames -------------------------------
-  useEffect(() => {
-    if (!data || !openPhaseId) {
-      setOpenPhase(null);
-      setEvents([]);
-      setFrames([]);
-      return;
-    }
-    let cancelled = false;
-    setPhaseLoading(true);
+  const detail = usePhaseDetail(data, openPhaseId, (id) =>
     // The row is usually already on screen; only fall back to a query for a
     // cold deep link.
-    const known = result?.rows.find((r) => r.phase_id === openPhaseId);
-    (known ? Promise.resolve(known) : data.phaseById(openPhaseId))
-      .then(async (phase) => {
-        if (cancelled || !phase) {
-          if (!cancelled) setPhaseLoading(false);
-          return;
-        }
-        setOpenPhase(phase);
-        const [loadedEvents, loadedFrames] = await Promise.all([
-          data.eventsFor(phase),
-          data.framesFor(phase),
-        ]);
-        if (cancelled) return;
-        setEvents(loadedEvents);
-        setFrames(loadedFrames);
-        setPhaseLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setPhaseLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // `result` is deliberately not a dependency: re-running the search must not
-    // reload the open player.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, openPhaseId]);
+    result?.rows.find((r) => r.phase_id === id),
+  );
+  const openPhase = detail.phase;
 
   // ---- actions ---------------------------------------------------------------
   const applyQuery = useCallback((next: PhaseQuery, presetId: string | null = null) => {
@@ -230,6 +216,58 @@ export default function App() {
     setQuery((q) => ({ ...q }));
   }, []);
 
+  // ---- reports ---------------------------------------------------------------
+  const { reports, activeId } = useReports();
+  const activeReport = useMemo(
+    () => reports.find((r) => r.id === activeId) ?? null,
+    [reports, activeId],
+  );
+  const pinnedCount = activeReport ? countPhases(activeReport) : 0;
+
+  const isPinned = useCallback(
+    (phaseId: string) => (activeReport ? hasPhase(activeReport, phaseId) : false),
+    [activeReport],
+  );
+
+  const togglePin = useCallback(
+    (phaseId: string) => {
+      // A similarity ranking was not produced by the filter query, so recording
+      // that query with the phase would be a lie — the section is pinned
+      // without one instead. Same reasoning as the chips (QueryChips.tsx).
+      const outcome = reportStore.togglePin(phaseId, similarPin ? null : query);
+      setPinNote(
+        outcome === 'full'
+          ? `This report already holds ${MAX_PHASES_PER_REPORT} phases — the most a shareable URL and a printed document can carry. Start a second report.`
+          : null,
+      );
+    },
+    [query, similarPin],
+  );
+
+  const openReport = useCallback(() => {
+    setHashParam('report', reportStore.ensureActive().id);
+  }, [setHashParam]);
+
+  const backToSearch = useCallback(() => setHashParam('report', null), [setHashParam]);
+
+  const runQueryFromReport = useCallback(
+    (next: PhaseQuery) => {
+      backToSearch();
+      setParseNote(null);
+      setDropped([]);
+      applyQuery(next, null);
+    },
+    [backToSearch, applyQuery],
+  );
+
+  const similarFromReport = useCallback(
+    (phaseId: string) => {
+      backToSearch();
+      void findSimilar(phaseId);
+    },
+    [backToSearch, findSimilar],
+  );
+
   // ---- player navigation -----------------------------------------------------
   const rows = result?.rows ?? [];
   const openIndex = openPhaseId ? rows.findIndex((r) => r.phase_id === openPhaseId) : -1;
@@ -261,130 +299,173 @@ export default function App() {
           </div>
           <SearchBar onSubmit={runText} busy={busy} offline={!API_CONFIGURED} />
           <span className="dataset-line">{datasetLine}</span>
+          <button
+            type="button"
+            className="ghost-btn report-entry"
+            aria-expanded={Boolean(reportTarget)}
+            title={
+              pinnedCount
+                ? `Open the report — ${pinnedCount} phase${pinnedCount === 1 ? '' : 's'} pinned`
+                : 'Start a report: pin phases from any search'
+            }
+            onClick={openReport}
+          >
+            Report
+            <span className="pin-count num">{pinnedCount}</span>
+          </button>
         </div>
       </header>
 
-      <div className="controls">
-        <div className="shell controls-inner">
-          <div className="preset-row">
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="preset"
-                aria-pressed={activePreset === preset.id}
-                title={preset.blurb}
-                onClick={() => runPreset(preset.id)}
-              >
-                {preset.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="ghost-btn"
-              aria-expanded={builderOpen}
-              onClick={() => setBuilderOpen((v) => !v)}
-            >
-              {builderOpen ? 'Hide filters' : 'Filters'}
-            </button>
-          </div>
-
-          <QueryChips
-            query={query}
-            onRemoveFilter={(i) => applyQuery(removeFilter(query, i), null)}
-            onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
-            similarTo={similarPin}
-            onClearSimilar={clearSimilar}
+      {reportTarget ? (
+        <Suspense
+          fallback={
+            <main className="shell">
+              <div className="status-line" style={{ padding: '28px 0' }}>
+                <span className="spinner" /> opening the report…
+              </div>
+            </main>
+          }
+        >
+          <ReportPage
+            data={data}
+            target={reportTarget}
+            onRunQuery={runQueryFromReport}
+            onSimilar={similarFromReport}
+            onBack={backToSearch}
           />
-
-          {builderOpen && data ? (
-            <FilterBuilder
-              query={query}
-              onChange={(next) => applyQuery(next, null)}
-              teams={data.teams}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <main className="shell" style={{ flex: 1 }}>
-        {bootError ? (
-          <div className="error-box">
-            <strong>Could not load the phase index.</strong> {bootError}
-          </div>
-        ) : null}
-
-        {issues.length ? (
-          <div className="error-box">
-            <strong>That query is not valid.</strong>
-            <ul>
-              {issues.map((issue) => (
-                <li key={issue}>{issue}</li>
+        </Suspense>
+      ) : (
+        <>
+        <div className="controls">
+          <div className="shell controls-inner">
+            <div className="preset-row">
+              {PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className="preset"
+                  aria-pressed={activePreset === preset.id}
+                  title={preset.blurb}
+                  onClick={() => runPreset(preset.id)}
+                >
+                  {preset.label}
+                </button>
               ))}
-            </ul>
-          </div>
-        ) : null}
+              <button
+                type="button"
+                className="ghost-btn"
+                aria-expanded={builderOpen}
+                onClick={() => setBuilderOpen((v) => !v)}
+              >
+                {builderOpen ? 'Hide filters' : 'Filters'}
+              </button>
+            </div>
 
-        {parseNote || dropped.length ? (
-          <div className="note-box">
-            {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
-            {parseNote}
-            {dropped.length ? (
-              <>
-                {' '}
-                <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
-                that, so it was left out rather than approximated.
-              </>
+            <QueryChips
+              query={query}
+              onRemoveFilter={(i) => applyQuery(removeFilter(query, i), null)}
+              onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
+              similarTo={similarPin}
+              onClearSimilar={clearSimilar}
+            />
+
+            {builderOpen && data ? (
+              <FilterBuilder
+                query={query}
+                onChange={(next) => applyQuery(next, null)}
+                teams={data.teams}
+              />
             ) : null}
           </div>
-        ) : null}
-
-        <div className="results-head">
-          <span className="results-count">
-            {!data ? (
-              <span className="status-line">
-                <span className="spinner" /> loading the phase index…
-              </span>
-            ) : searching ? (
-              <span className="status-line">
-                <span className="spinner" /> searching…
-              </span>
-            ) : similarPin ? (
-              <>
-                <strong className="num">{rows.length}</strong> most similar phases
-              </>
-            ) : (
-              <>
-                <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
-                {(result?.total ?? 0) > rows.length ? (
-                  <>
-                    {' '}
-                    · showing the top <span className="num">{rows.length}</span>
-                  </>
-                ) : null}
-              </>
-            )}
-          </span>
-          {result && !searching ? (
-            <span className="results-count num" title="Wall time for the DuckDB query in your browser">
-              {result.ms.toFixed(0)} ms
-            </span>
-          ) : null}
         </div>
 
-        {!data && !bootError ? (
-          <SkeletonGrid count={8} />
-        ) : (
-          <ResultsGrid
-            rows={rows}
-            loading={searching && rows.length === 0}
-            onOpen={openPhaseById}
-            onSimilar={findSimilar}
-          />
-        )}
-      </main>
+        <main className="shell" style={{ flex: 1 }}>
+          {bootError ? (
+            <div className="error-box">
+              <strong>Could not load the phase index.</strong> {bootError}
+            </div>
+          ) : null}
 
-      <Insights />
+          {issues.length ? (
+            <div className="error-box">
+              <strong>That query is not valid.</strong>
+              <ul>
+                {issues.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {parseNote || dropped.length ? (
+            <div className="note-box">
+              {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
+              {parseNote}
+              {dropped.length ? (
+                <>
+                  {' '}
+                  <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
+                  that, so it was left out rather than approximated.
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="results-head">
+            <span className="results-count">
+              {!data ? (
+                <span className="status-line">
+                  <span className="spinner" /> loading the phase index…
+                </span>
+              ) : searching ? (
+                <span className="status-line">
+                  <span className="spinner" /> searching…
+                </span>
+              ) : similarPin ? (
+                <>
+                  <strong className="num">{rows.length}</strong> most similar phases
+                </>
+              ) : (
+                <>
+                  <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
+                  {(result?.total ?? 0) > rows.length ? (
+                    <>
+                      {' '}
+                      · showing the top <span className="num">{rows.length}</span>
+                    </>
+                  ) : null}
+                </>
+              )}
+            </span>
+            {result && !searching ? (
+              <span className="results-count num" title="Wall time for the DuckDB query in your browser">
+                {result.ms.toFixed(0)} ms
+              </span>
+            ) : null}
+          </div>
+
+          {!data && !bootError ? (
+            <SkeletonGrid count={8} />
+          ) : (
+            <ResultsGrid
+              rows={rows}
+              loading={searching && rows.length === 0}
+              onOpen={openPhaseById}
+              onSimilar={findSimilar}
+              pin={{ isPinned, onToggle: togglePin }}
+            />
+          )}
+        </main>
+
+        <Insights />
+        </>
+      )}
+
+      {pinNote ? (
+        <div className="shell">
+          <div className="note-box">{pinNote}</div>
+        </div>
+      ) : null}
 
       <Footer
         lastQueryMs={result?.ms ?? null}
@@ -396,13 +477,16 @@ export default function App() {
       {openPhase ? (
         <PhasePlayer
           phase={openPhase}
-          events={events}
-          frames={frames}
-          loading={phaseLoading}
+          events={detail.events}
+          frames={detail.frames}
+          loading={detail.loading}
+          error={detail.error}
           onClose={() => openPhaseById(null)}
           onPrev={openIndex > 0 ? () => goTo(-1) : null}
           onNext={openIndex >= 0 && openIndex < rows.length - 1 ? () => goTo(1) : null}
           onSimilar={findSimilar}
+          onPin={togglePin}
+          pinned={isPinned(openPhase.phase_id)}
         />
       ) : null}
     </div>

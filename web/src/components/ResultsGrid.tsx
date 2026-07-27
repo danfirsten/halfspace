@@ -4,6 +4,10 @@
  * No card fetches anything. Every value on it — the trajectory included — came
  * from the row the search already returned, which is what keeps first paint
  * inside the 300 ms budget for 48 results.
+ *
+ * `PhaseCard` is exported because a report renders the same card: a phase
+ * should look and behave identically whether you found it or saved it, so
+ * there is one implementation and the actions along the bottom differ.
  */
 import { memo } from 'react';
 import type { PhaseRow } from '../duck/types';
@@ -19,15 +23,24 @@ import {
   xg as fmtXg,
 } from '../lib/format';
 
+/** One button in a card's bottom row. `active` renders it as pressed. */
+export interface CardAction {
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  title?: string;
+}
+
 interface Props {
   rows: PhaseRow[];
   onOpen: (phaseId: string) => void;
   onSimilar: (phaseId: string) => void;
-  /** Rank offset, so a "similar" result set still numbers from 1. */
   loading?: boolean;
+  /** Pin state for the active report, when there is one to pin into. */
+  pin?: { isPinned: (phaseId: string) => boolean; onToggle: (phaseId: string) => void };
 }
 
-export function ResultsGrid({ rows, onOpen, onSimilar, loading }: Props) {
+export function ResultsGrid({ rows, onOpen, onSimilar, loading, pin }: Props) {
   if (loading) return <SkeletonGrid />;
 
   if (rows.length === 0) {
@@ -40,87 +53,148 @@ export function ResultsGrid({ rows, onOpen, onSimilar, loading }: Props) {
 
   return (
     <div className="grid">
-      {rows.map((row, i) => (
-        <ResultCard key={row.phase_id} row={row} rank={i + 1} onOpen={onOpen} onSimilar={onSimilar} />
-      ))}
+      {rows.map((row, i) => {
+        const pinned = pin?.isPinned(row.phase_id) ?? false;
+        const actions: CardAction[] = [
+          { label: 'Similar', onClick: () => onSimilar(row.phase_id), title: 'Find phases like this one' },
+        ];
+        if (pin) {
+          actions.push({
+            label: pinned ? 'Pinned' : 'Pin',
+            onClick: () => pin.onToggle(row.phase_id),
+            active: pinned,
+            title: pinned ? 'Remove from the report' : 'Add to the report, with the query that found it',
+          });
+        }
+        return (
+          <PhaseCard key={row.phase_id} row={row} rank={i + 1} onOpen={onOpen} actions={actions} />
+        );
+      })}
     </div>
   );
 }
 
-const ResultCard = memo(function ResultCard({
+export const PhaseCard = memo(function PhaseCard({
   row,
   rank,
   onOpen,
-  onSimilar,
+  actions,
+  frozen,
 }: {
   row: PhaseRow;
   rank: number;
   onOpen: (phaseId: string) => void;
-  onSimilar: (phaseId: string) => void;
+  actions?: CardAction[];
+  /** Print/PDF: draw the phase mid-trajectory instead of animating it. */
+  frozen?: boolean;
 }) {
   return (
     <div
-        className="card"
-        role="button"
-        tabIndex={0}
-        onClick={() => onOpen(row.phase_id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpen(row.phase_id);
-          }
-        }}
-        aria-label={`${row.team_name} versus ${row.opponent_name}, ${clock(row.minute, row.second)}, ${outcomeLabel(row.outcome)}`}
-      >
-        <div className="card-pitch">
-          <PathThumbnail
-            pathXy={row.path_xy}
-            index={rank}
-            startZoneLabel={`${startTypeLabel(row.start_type)} → ${outcomeLabel(row.outcome)}`}
-          />
-          <span className="card-rank num">{rank}</span>
+      className="card"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(row.phase_id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(row.phase_id);
+        }
+      }}
+      aria-label={`${row.team_name} versus ${row.opponent_name}, ${clock(row.minute, row.second)}, ${outcomeLabel(row.outcome)}`}
+    >
+      <div className="card-pitch">
+        <PathThumbnail
+          pathXy={row.path_xy}
+          index={rank}
+          frozen={frozen}
+          startZoneLabel={`${startTypeLabel(row.start_type)} → ${outcomeLabel(row.outcome)}`}
+        />
+        <span className="card-rank num">{rank}</span>
+      </div>
+
+      <div className="card-body">
+        <div className="card-teams">
+          <span>{row.team_name}</span>
+          <span className="vs">v</span>
+          <span className="opp">{row.opponent_name}</span>
         </div>
 
-        <div className="card-body">
-          <div className="card-teams">
-            <span>{row.team_name}</span>
-            <span className="vs">v</span>
-            <span className="opp">{row.opponent_name}</span>
-          </div>
+        <div className="card-meta">
+          {matchStage(row.match_label)} · <span className="num">{clock(row.minute, row.second)}</span>
+        </div>
 
-          <div className="card-meta">
-            {matchStage(row.match_label)} · <span className="num">{clock(row.minute, row.second)}</span>
-          </div>
+        {/* Two fixed rows, so every card in the grid is exactly as tall as
+            every other one whatever the phase happens to contain. */}
+        <div className="card-stats">
+          <span className={outcomeBadgeClass(row.outcome)}>{outcomeLabel(row.outcome)}</span>
+          {row.xg > 0 ? <span className="xg-pill num">{fmtXg(row.xg)} xG</span> : null}
+        </div>
 
-          {/* Two fixed rows, so every card in the grid is exactly as tall as
-              every other one whatever the phase happens to contain. */}
-          <div className="card-stats">
-            <span className={outcomeBadgeClass(row.outcome)}>{outcomeLabel(row.outcome)}</span>
-            {row.xg > 0 ? <span className="xg-pill num">{fmtXg(row.xg)} xG</span> : null}
-          </div>
-
-          <div className="card-stats card-micro">
-            <span className="num">{seconds(row.duration_s)}</span>
-            <span className="sep">·</span>
-            <span className="num">{row.n_passes} pass</span>
-            <span className="sep">·</span>
-            <span>{startTypeLabel(row.start_type)}</span>
-            <span className="grow" />
+        <div className="card-stats card-micro">
+          <span className="num">{seconds(row.duration_s)}</span>
+          <span className="sep">·</span>
+          <span className="num">{row.n_passes} pass</span>
+          <span className="sep">·</span>
+          <span>{startTypeLabel(row.start_type)}</span>
+          <span className="grow" />
+          {(actions ?? []).map((action) => (
             <button
+              key={action.label}
               type="button"
               className="mini-btn"
+              aria-pressed={action.active}
+              title={action.title}
               onClick={(e) => {
                 e.stopPropagation();
-                onSimilar(row.phase_id);
+                action.onClick();
               }}
             >
-              Similar
+              {action.label}
             </button>
-          </div>
+          ))}
         </div>
       </div>
+    </div>
   );
 });
+
+/**
+ * A pinned phase the index does not contain — a report shared from a different
+ * build, or a dataset that has moved on. It gets a card of its own rather than
+ * vanishing, because a report that silently loses a clip is worse than one that
+ * admits it.
+ */
+export function MissingPhaseCard({
+  phaseId,
+  onRemove,
+}: {
+  phaseId: string;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="card card-missing">
+      <div className="card-pitch">
+        <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
+      </div>
+      <div className="card-body">
+        <div className="card-teams">Phase not found</div>
+        <div className="card-meta num">{phaseId}</div>
+        <div className="card-stats">
+          <span className="badge badge-neutral">missing from this index</span>
+        </div>
+        <div className="card-stats card-micro">
+          <span>Pinned against another dataset build.</span>
+          <span className="grow" />
+          {onRemove ? (
+            <button type="button" className="mini-btn" onClick={onRemove}>
+              Remove
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * The landing skeleton. It draws the real pitch, not a grey box: the pitch is

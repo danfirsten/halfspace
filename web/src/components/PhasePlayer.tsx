@@ -99,6 +99,11 @@ interface Props {
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
   onSimilar: (phaseId: string) => void;
+  /** Toggle this phase in the active report. Absent hides the control. */
+  onPin?: (phaseId: string) => void;
+  pinned?: boolean;
+  /** Set when the match shard behind this phase failed to load. */
+  error?: string | null;
 }
 
 export function PhasePlayer({
@@ -110,6 +115,9 @@ export function PhasePlayer({
   onPrev,
   onNext,
   onSimilar,
+  onPin,
+  pinned,
+  error,
 }: Props) {
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
@@ -237,10 +245,16 @@ export function PhasePlayer({
         setPlaying((p) => !p);
       } else if (e.key === 'ArrowLeft' && onPrev) onPrev();
       else if (e.key === 'ArrowRight' && onNext) onNext();
+      // `p` pins: an analyst going through twenty clips should never have to
+      // reach for the mouse to keep one.
+      else if ((e.key === 'p' || e.key === 'P') && onPin && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        onPin(phase.phase_id);
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, onPrev, onNext]);
+  }, [onClose, onPrev, onNext, onPin, phase.phase_id]);
 
   // Restart when the phase changes (prev/next navigation).
   useEffect(() => {
@@ -276,6 +290,17 @@ export function PhasePlayer({
           </div>
 
           <div className="player-head-actions">
+            {onPin ? (
+              <button
+                type="button"
+                className="ghost-btn"
+                aria-pressed={pinned}
+                title={pinned ? 'Remove from the report (p)' : 'Add to the report (p)'}
+                onClick={() => onPin(phase.phase_id)}
+              >
+                {pinned ? 'In report ✓' : 'Add to report'}
+              </button>
+            ) : null}
             <button type="button" className="ghost-btn" onClick={() => onSimilar(phase.phase_id)}>
               Find similar
             </button>
@@ -448,6 +473,14 @@ export function PhasePlayer({
           {loading ? (
             <div className="status-line">
               <span className="spinner" /> loading events and 360 frames for this match…
+            </div>
+          ) : null}
+
+          {error ? (
+            <div className="error-box">
+              <strong>Some of this phase could not be loaded.</strong> {error} The header and the
+              summary come from the phase index, which did load; the replay needs the match shard,
+              which did not.
             </div>
           ) : null}
 

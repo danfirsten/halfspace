@@ -1435,6 +1435,574 @@ select:focus {
   }
 }
 
+/* ---------- reports ---------- */
+
+/* Header entry point. The count is the whole point of it: an analyst mid-search
+   needs to know the report is filling up without leaving the search. */
+.report-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.pin-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  font-size: 11px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.report-entry:hover .pin-count {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* A pressed pin reads as state, not as a second action. */
+.mini-btn[aria-pressed='true'],
+.ghost-btn[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  background: rgba(63, 182, 168, 0.09);
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.report {
+  flex: 1;
+  padding-bottom: 40px;
+}
+
+.report-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 18px;
+}
+
+.report-toolbar .grow {
+  flex: 1;
+}
+
+.ghost-btn.danger:hover {
+  color: #ff8f7a;
+  border-color: #6b3a34;
+}
+
+.report-select {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  max-width: 260px;
+}
+
+/* ---- share ---- */
+
+.report-share {
+  position: relative;
+  display: inline-flex;
+}
+
+.report-share-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(520px, 88vw);
+  background: #10151a;
+  border: 1px solid #39424a;
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  animation: pop-in var(--fast) var(--ease);
+  text-align: left;
+}
+
+.report-share-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.report-share-url {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+}
+
+.report-share-size {
+  margin-top: 7px;
+  font-size: 11.5px;
+  color: #6d7681;
+  line-height: 1.5;
+}
+
+.report-share-size.over {
+  color: #f0b3a6;
+}
+
+.report-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  border: 1px solid var(--accent-dim);
+  background: rgba(63, 182, 168, 0.07);
+  border-radius: var(--radius);
+  padding: 10px 13px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+
+.report-banner strong {
+  color: var(--text);
+}
+
+/* ---- the document ---- */
+
+.report-doc {
+  max-width: 1180px;
+}
+
+.report-head {
+  margin-bottom: 16px;
+}
+
+.report-title {
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+
+/* An input that reads as a heading: click the words, type. No edit mode, no
+   pencil icon, nothing to discover. */
+.report-title-input {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  padding: 1px 0;
+  outline: none;
+  border-radius: 0;
+}
+
+.report-title-input:hover {
+  border-bottom-color: var(--hairline);
+}
+
+.report-title-input:focus {
+  border-bottom-color: var(--accent-dim);
+}
+
+.report-title-input::placeholder {
+  color: #4d565e;
+}
+
+.report-byline {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 4px;
+  margin: 16px 0 8px;
+}
+
+.rstat {
+  flex: 1 1 120px;
+  padding: 0 16px;
+  border-right: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rstat:last-child {
+  border-right: 0;
+}
+
+.rstat .k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6d7681;
+}
+
+.rstat .v {
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.report-summary-note {
+  margin: 0 0 18px;
+  font-size: 11.5px;
+  color: #6d7681;
+  line-height: 1.55;
+  max-width: 78ch;
+}
+
+.report-notes {
+  display: block;
+  width: 100%;
+  max-width: 78ch;
+  background: none;
+  border: 1px solid transparent;
+  border-left: 2px solid var(--hairline);
+  border-radius: 0;
+  padding: 2px 0 2px 12px;
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  resize: none;
+  overflow: hidden;
+  outline: none;
+}
+
+.report-notes:hover {
+  border-left-color: #39424a;
+}
+
+.report-notes:focus {
+  border-left-color: var(--accent-dim);
+}
+
+.report-notes::placeholder {
+  color: #4d565e;
+}
+
+.report-notes-print {
+  max-width: 78ch;
+  border-left: 2px solid var(--hairline);
+  padding: 2px 0 2px 12px;
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.report-section {
+  margin-bottom: 30px;
+  break-inside: auto;
+}
+
+.report-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.report-section-title {
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.report-section-head .grow {
+  flex: 0;
+}
+
+.report-found-with {
+  margin-bottom: 10px;
+}
+
+.report-section-note {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.report-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-bottom: 4px;
+}
+
+.report-grid .card-micro {
+  flex-wrap: wrap;
+  overflow: visible;
+  row-gap: 5px;
+}
+
+.card-missing {
+  cursor: default;
+  border-style: dashed;
+}
+
+.card-missing .card-pitch {
+  opacity: 0.35;
+}
+
+.report-empty {
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  max-width: 70ch;
+}
+
+.report-empty h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.report-empty p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.report-empty-note {
+  font-size: 12px !important;
+  color: #6d7681 !important;
+}
+
+.report-provenance {
+  margin: 26px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11.5px;
+  color: #6d7681;
+  max-width: 82ch;
+  line-height: 1.55;
+}
+
+@media (max-width: 1100px) {
+  .report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .report-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .report-title {
+    font-size: 22px;
+  }
+  .rstat {
+    flex: 1 1 40%;
+    border-right: 0;
+    padding: 6px 12px;
+  }
+}
+
+/* ---------- print: the report as a document on paper ----------
+   A scouting report gets emailed as a PDF more often than it gets opened in a
+   browser, so this is a real stylesheet and not an afterthought: the palette
+   inverts to ink-on-white, every animation stops, and the thumbnails are
+   frozen mid-trajectory in React (ReportPage `usePrinting`) because a moving
+   ball prints as a ball in a random place. */
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f4f5f6;
+    --hairline: #c9ced3;
+    --text: #14181b;
+    --text-dim: #4a5560;
+    --accent: #17706a;
+    --accent-dim: #17706a;
+    --ball: #a8620a;
+    --team-a: #14181b;
+    --team-b: #2d5ea8;
+    --turf: #ffffff;
+    --turf-line: #b9c0c6;
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff;
+    color: #14181b;
+    font-size: 11pt;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+  }
+
+  .shimmer::after {
+    display: none !important;
+  }
+
+  /* Everything that is app rather than document. */
+  .header,
+  .controls,
+  .insights,
+  .report-toolbar,
+  .report-banner,
+  .overlay,
+  .footer-meta,
+  .no-print,
+  .report-section-head .mini-btn,
+  .card-micro .mini-btn {
+    display: none !important;
+  }
+
+  .app,
+  .report,
+  .shell {
+    display: block;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .report-doc {
+    max-width: none;
+  }
+
+  .report-title,
+  .report-title-input {
+    font-size: 20pt;
+    color: #14181b;
+    border: 0;
+  }
+
+  .report-notes,
+  .report-notes-print,
+  .report-section-note {
+    color: #14181b;
+    border-left: 2px solid #c9ced3;
+    /* A textarea prints its content, but only what fits: AutoTextarea grows to
+       its scrollHeight, so nothing is cut. */
+    overflow: visible;
+    height: auto;
+  }
+
+  .report-summary {
+    border: 1px solid #c9ced3;
+    break-inside: avoid;
+  }
+
+  .rstat .v {
+    font-size: 15pt;
+  }
+
+  .report-section {
+    break-inside: auto;
+  }
+
+  .report-section-title {
+    break-after: avoid;
+  }
+
+  .report-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    break-inside: avoid;
+    border: 1px solid #c9ced3;
+    background: #fff;
+    transform: none !important;
+  }
+
+  .card-pitch {
+    background: #fff;
+    border-bottom: 1px solid #e2e5e8;
+  }
+
+  .card-rank,
+  .card-meta,
+  .card-stats {
+    color: #4a5560;
+  }
+
+  .chip {
+    background: #f4f5f6;
+    border-color: #c9ced3;
+    color: #14181b;
+  }
+
+  .badge,
+  .xg-pill,
+  .footer-logo {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* The StatsBomb lockup is white artwork; on paper it needs its own dark
+     chip. Clause 1.4 asks for the logo, so it prints. */
+  .footer-logo {
+    background: #0e1114;
+    padding: 5px 7px;
+    border-radius: 3px;
+  }
+
+  .footer {
+    border-top: 1px solid #c9ced3;
+    background: #fff;
+    break-inside: avoid;
+    margin-top: 18px;
+  }
+
+  .footer-inner {
+    padding: 10px 0 0;
+  }
+
+  .footer-text {
+    color: #4a5560;
+    font-size: 8pt;
+  }
+
+  a {
+    color: #14181b;
+    text-decoration: none;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
