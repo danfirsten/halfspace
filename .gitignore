@@ -25,3 +25,6 @@ data/matches/
 # OS
 .DS_Store
 Thumbs.db
+
+# Hero-GIF frames (intermediate; the GIF itself is committed)
+.gif-frames/

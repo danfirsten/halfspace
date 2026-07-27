@@ -1,7 +1,17 @@
 /**
- * Capture the phase player animating, frame by frame, for the README hero GIF.
- * Deterministic: playback is paused and the timeline is scrubbed to evenly
- * spaced instants, so every frame is the same distance apart in match time.
+ * Step 1 of the README hero GIF: capture the phase player animating, frame by
+ * frame, from the *production build*.
+ *
+ * Deterministic rather than a screen recording — playback is paused and the
+ * timeline scrubbed to evenly spaced instants, so every frame is the same
+ * distance apart in match time whatever the machine is doing.
+ *
+ *   npm run build && npx vite preview --port 4173
+ *   PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node gif.mjs
+ *   python3 gif.py                      # step 2: assemble docs/screenshots/player.gif
+ *
+ * The default phase is Spain's winner in the Euro 2024 final: 95% 360 coverage,
+ * 78 m of progression, and the whole pitch used.
  */
 import { chromium } from 'playwright';
 import { mkdirSync, rmSync } from 'node:fs';
@@ -9,7 +19,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 const EXE = process.env.CHROMIUM ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173/';
 const PHASE = process.env.PHASE ?? '3943043-0135';
-const OUT = process.env.OUT ?? '/tmp/claude-0/-home-user-halfspace/a694d7b9-aa9e-541f-bd07-c557653c0680/scratchpad/frames';
+const OUT = process.env.OUT ?? '.gif-frames';
 const N = Number(process.env.N ?? 54);
 
 rmSync(OUT, { recursive: true, force: true });
