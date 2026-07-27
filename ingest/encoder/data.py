@@ -81,7 +81,7 @@ class PhaseStore:
     def n_events(self, i: int) -> int:
         return int(self.stop[i] - self.start[i])
 
-    def slice(self, i: int, lo: int = 0, hi: int | None = None) -> "Segment":
+    def slice(self, i: int, lo: int = 0, hi: int | None = None) -> Segment:
         """A (sub-)sequence of phase ``i``, indices relative to the phase."""
         s = int(self.start[i])
         e = int(self.stop[i])

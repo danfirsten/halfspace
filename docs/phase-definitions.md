@@ -458,6 +458,20 @@ same phase.
 
 The whole file is **2.66 MB** against an 8 MB budget.
 
+### Why it is still the hand-built vector
+
+A learned alternative was built and measured: a 175k-parameter Transformer over
+each phase's event sequence, trained self-supervised (`ingest/encoder/`). It was
+evaluated against this vector under a protocol written and committed *before*
+training — split-half retrieval on held-out matches, plus a transfer probe on
+StatsBomb pass fields that neither representation is given — and it **lost**:
+test-split MRR 0.0360 against 0.0398, Recall@1 0.0131 against 0.0193.
+
+So the baseline stays, and `similarity.parquet` is unchanged. The full record,
+including where the encoder is *better* (aerial and headed-pass structure, and
+median rank), is `ingest/encoder/RESULTS.md`; the pre-registration is
+`ingest/encoder/EVAL.md`.
+
 ## 15. Known limitations
 
 **Team colours on ~1.6% of 360 frames are uncertain.** Of 331,383 stored frames,

@@ -35,6 +35,54 @@ Optional:
 The download step is idempotent — it issues one HEAD per file and skips anything
 whose local size already matches — so re-running it costs a few seconds.
 
+### P2 — the learned phase encoder
+
+`encoder/` is a self-contained experiment: a small self-supervised Transformer
+over each phase's event sequence, proposed as a replacement for the hand-built
+`similarity.parquet` vectors. It ships **only** if it beats the baseline on an
+evaluation that was written and committed before the first training step
+(`encoder/EVAL.md`).
+
+**It did not.** On the untouched test split it scored MRR 0.0360 against the
+baseline's 0.0398 on split-half retrieval, and Recall@1 0.0131 against 0.0193.
+`similarity.parquet` is unchanged and still holds the 74-dim baseline. The code,
+the pre-registration and the full numbers stay committed as the record —
+`encoder/RESULTS.md` also documents the two places the encoder is *better*,
+which is where a future attempt should start.
+
+It needs PyTorch, which is deliberately *not* in `requirements.txt`:
+
+```bash
+./.venv/bin/pip install -r requirements-encoder.txt
+
+# baseline-only numbers on a split (no model needed)
+./.venv/bin/python -m encoder.evaluate --split validation
+
+# train; re-running the same command resumes from the last checkpoint
+./.venv/bin/python -m encoder.train --name v1
+
+# evaluate a checkpoint under the pre-registered protocol
+./.venv/bin/python -m encoder.evaluate --split validation --ckpt encoder/checkpoints/v1-best.pt
+
+# export learned vectors into web/public/data/similarity.parquet
+./.venv/bin/python -m encoder.export --ckpt encoder/checkpoints/v1-best.pt
+```
+
+Every flag on `TrainConfig` is a CLI flag (`--temperature`, `--crop-min`,
+`--epochs`, …). Checkpoints land in `encoder/checkpoints/` and are gitignored;
+each one carries its full config, seed, epoch, optimiser state and validation
+history, so a run is reproducible or resumable from the file alone.
+
+Which representation the build writes is a flag:
+
+```bash
+./.venv/bin/python -m halfspace_ingest.build --similarity baseline
+./.venv/bin/python -m halfspace_ingest.build --similarity learned --encoder-ckpt encoder/checkpoints/v1-best.pt
+```
+
+`manifest.json`'s `similarity` block records which one produced the file. The
+web app reads `similarity.parquet` either way — nothing in `web/` changes.
+
 ### Where things go
 
 | | Path |

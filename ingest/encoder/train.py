@@ -69,10 +69,10 @@ def train(
     name: str = "v1",
     fresh: bool = False,
     eval_every: int = 5,
-    workers_note: str = "cpu",
+    threads: int = 4,
 ) -> dict:
     set_determinism(cfg.seed)
-    torch.set_num_threads(4)
+    torch.set_num_threads(threads)
 
     splits = load_splits()
     train_store = load_store(splits["train"])
@@ -157,7 +157,7 @@ def train(
         "name": name,
         "seed": cfg.seed,
         "parameters": n_params,
-        "device": workers_note,
+        "device": f"cpu x{threads} threads",
         "wall_seconds": wall,
         "best_val_mrr": best_mrr,
         "config": cfg.to_json(),
@@ -191,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--name", default="v1")
     ap.add_argument("--fresh", action="store_true", help="ignore any existing checkpoint")
     ap.add_argument("--eval-every", type=int, default=5)
+    ap.add_argument("--threads", type=int, default=4, help="torch CPU threads")
     for field, value in cfg_fields.to_json().items():
         ap.add_argument(f"--{field.replace('_', '-')}", type=type(value), default=value)
     args = ap.parse_args(argv)
@@ -198,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
     cfg = TrainConfig(
         **{f: getattr(args, f) for f in cfg_fields.to_json()}
     )
-    train(cfg, name=args.name, fresh=args.fresh, eval_every=args.eval_every)
+    train(cfg, name=args.name, fresh=args.fresh, eval_every=args.eval_every, threads=args.threads)
     return 0
 
 

@@ -236,7 +236,8 @@ def to_markdown(res: dict) -> str:
             f"| {name} | {m['mrr']:.4f} | {m['recall@1']:.4f} | "
             f"{m['recall@10']:.4f} | {m['median_rank']:.0f} |"
         )
-    lines += ["", "| transfer probe | " + " | ".join(LABELS) + " | macro |", "|---" * (len(LABELS) + 2) + "|"]
+    header = "| transfer probe | " + " | ".join(LABELS) + " | macro |"
+    lines += ["", header, "|---" * (len(LABELS) + 2) + "|"]
     for name in ("baseline", "learned"):
         if name in res["secondary"]:
             p = res["secondary"][name]
@@ -244,8 +245,11 @@ def to_markdown(res: dict) -> str:
             lines.append(f"| {name} | {cells} | **{p['macro_auc']:.3f}** |")
     if "decision" in res:
         d = res["decision"]
-        lines += ["", f"decision: `ship_learned = {d['ship_learned']}` "
-                  f"(MRR ratio {d['mrr_ratio']:.3f}, need >= 1.10)"]
+        verdict = (
+            f"decision: `ship_learned = {d['ship_learned']}` "
+            f"(MRR ratio {d['mrr_ratio']:.3f}, need >= 1.10)"
+        )
+        lines += ["", verdict]
     return "\n".join(lines)
 
 
