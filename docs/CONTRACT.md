@@ -125,6 +125,24 @@ from phases.parquet columns. Unknown field/op/value → validation error shown i
 UI, never silently dropped. The UI always renders the active query back to the
 user as human-readable chips ("what it understood").
 
+## 3b. Pinned cross-component decisions (added after api/ build)
+
+- Zone enum, all nine values, exactly: `def_third_left`, `def_third_centre`,
+  `def_third_right`, `mid_third_left`, `mid_third_centre`, `mid_third_right`,
+  `final_third_left`, `final_third_centre`, `final_third_right`.
+- `match_id` is int64 everywhere; `phase_id` is string `{match_id}-{seq}`.
+- phases.parquet additionally carries a denormalized `competition` column
+  (values: `"Euro 2020"`, `"Euro 2024"`) so it is DSL-filterable; the DSL field
+  enum includes it (op: eq/in).
+- `order_by: null` means the compiler applies the composite default ordering
+  (xg desc, progression_m desc); the DSL itself stays single-key.
+- `progression_m` IS metres: StatsBomb x units are nominal yards; ingest
+  converts with 0.9144 m/yard (x-axis deltas only). `direct_speed_m_s`
+  = progression_m / duration_s. Documented in phase-definitions.md.
+- LLM calls: modern Claude models reject `temperature`; api/ uses low-effort
+  output config instead. §8's "temperature 0" is amended to "deterministic
+  config appropriate to the model".
+
 ## 4. Zones
 
 Pitch split 3 × 3: thirds (defensive / middle / final) × channels (left /
