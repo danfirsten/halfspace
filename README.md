@@ -208,13 +208,13 @@ under 2 s**, **any search under 300 ms**. Both hold.
 
 | | Measured | Budget |
 |---|---:|---:|
-| First meaningful paint (header, presets, placeholder pitches) | **341–450 ms** | < 2,000 ms |
-| First contentful paint | 252–308 ms | — |
-| Index ready — DuckDB-WASM up, 48 animated results on screen | 1,460–1,697 ms | — |
-| Preset query over 16,782 phases | **35–136 ms** | < 300 ms |
-| Find similar, cold (includes the one-time 2.66 MB vector fetch) | 238–272 ms | — |
-| Find similar, warm | **117–143 ms** | < 300 ms |
-| First meaningful paint, mobile viewport (390 × 844) | 230–310 ms | < 2,000 ms |
+| First meaningful paint (header, presets, placeholder pitches) | **380–488 ms** | < 2,000 ms |
+| First contentful paint | 252–368 ms | — |
+| Index ready — DuckDB-WASM up, 48 animated results on screen | 1,162–1,593 ms | — |
+| Preset query over 16,782 phases | **45–145 ms** | < 300 ms |
+| Find similar, cold (includes the one-time 2.66 MB vector fetch) | 242–295 ms | — |
+| Find similar, warm | **119–164 ms** | < 300 ms |
+| First meaningful paint, mobile viewport (390 × 844) | 209–240 ms | < 2,000 ms |
 | Cumulative layout shift, cold load to loaded grid | 0.003 | — |
 
 Measured locally, not on GitHub Pages: production build (`npm run build`) served by
@@ -234,11 +234,17 @@ the same cold load. The grid's placeholder card is the loaded card with its text
 replaced, so the two are the same height to the pixel and nothing moves when the
 index lands.
 
-Eager payload: 342 kB of app JS (105 kB gzipped), 44 kB CSS (8.7 kB gzipped), `phases.parquet` at
-2.90 MB and `matches.parquet` at 10.7 kB. DuckDB-WASM (18.1 MB, 4.26 MB gzipped) and
-the Vega charting stack (845 kB, 290 kB gzipped) are code-split and loaded after the
-placeholder grid paints; the report page and the 360 frames are fetched only when
-asked for.
+Eager payload: 343 kB of app JS (105 kB gzipped), 43 kB CSS (8.7 kB gzipped), 133 kB of
+woff2 across three families, `phases.parquet` at 2.90 MB and `matches.parquet` at
+10.7 kB. DuckDB-WASM (18.1 MB, 4.26 MB gzipped) and the Vega charting stack (845 kB,
+290 kB gzipped) are code-split and loaded after the placeholder grid paints; the
+report page and the 360 frames are fetched only when asked for.
+
+The fonts are subset to latin and nothing else, so adding Space Grotesk and IBM Plex
+Mono to Inter costs 60 kB over the three Inter weights it replaced — and the build
+now emits 133 kB of font assets rather than 289 kB, because the Cyrillic, Greek and
+Vietnamese subsets that shipped for an English interface are gone. Every face is
+`font-display: swap`, so type never blocks the paint.
 Zero console errors across the whole desktop, mobile and report walkthrough.
 
 ---
@@ -281,6 +287,32 @@ running the experiment.
 
 Full record, including every run and the deviations from the protocol:
 [`ingest/encoder/RESULTS.md`](ingest/encoder/RESULTS.md).
+
+---
+
+## The look
+
+Dark, cold, and built around one accent. The pitch is the only thing on screen with
+its own light, so everything else is ink: surfaces from `#0a0d11` to `#1a2027`, all of
+them carrying a few points of blue rather than a neutral grey, and one ice blue
+`#7cc7e8` for anything you can interact with. The ball keeps the only warm colour in
+the product.
+
+Three typefaces with three jobs and no overlap. **Inter** is the interface — controls,
+paragraphs, anything that is a sentence. **Space Grotesk** is the voice: the wordmark,
+titles, card headings and the uppercase keys, set tighter than Inter would be because
+its counters are wider. **IBM Plex Mono** carries every number, at 1.04em to correct
+for its shorter x-height; a phase id read off the screen and typed into a terminal
+should look the same in both places, and `font-variant-numeric` on a proportional face
+only ever got half of that.
+
+The accessibility claims are checked rather than asserted. Every text tier clears
+**4.5:1 on every surface it can land on** — screen and print — including the accent
+wherever it carries a word and the tinted washes behind pressed states. Every pair of
+marks on the pitch (home shirt, away shirt, ball, goalkeeper ring) stays above
+**15 ΔE00 under protanopia, deuteranopia and tritanopia** simulation, which is why the
+away shirt is indigo rather than the cornflower it was before the accent became a
+blue: two blues that a deuteranope reads as one blue are two blues too many.
 
 ---
 

@@ -179,26 +179,62 @@ attacking team's perspective (verify against spec orientation in research notes)
 Enum values: `def_third_left`, `def_third_centre`, ... `final_third_right`.
 Box detection uses the real penalty-area geometry from the spec, not zones.
 
-## 5. Design system (web)
+## 5. Design system (web) — "Ice & Ink"
 
-Restrained, dark, broadcast-analysis-desk. The pitch is the hero.
+Restrained, dark, broadcast-analysis-desk. The pitch is the hero. Every grey
+carries a few points of blue, because the pitch is the coldest thing on the
+page and the chrome belongs to it rather than sitting beside it.
 
-- Background `#0e1114`, surface `#161a1e`, hairlines `#262c31`.
-- Text: `#e8eaec` primary, `#8b949e` secondary. One accent for interactive
-  elements: desaturated teal `#3fb6a8`. Ball highlight: `#f5c451`. Team A/B on
-  pitch: `#e8eaec` vs `#5b8dd9` (never red-vs-green; colourblind-safe).
+- Surfaces: background `#0a0d11`, surface `#12171c`, raised surface `#1a2027`,
+  hairline `#2b333b`, lit hairline `#465360`. Floating things (popovers,
+  tooltips) sit on `#0d1319`; the footer on `#070a0d`.
+- Text, three tiers and one non-text tier: `#f0f3f6` primary, `#9aa5b1`
+  secondary, `#8e99a5` muted, `#525d68` for marks only (separators, dashes,
+  disabled glyphs — never a word). Every text tier clears **4.5:1 on every
+  surface it can land on**, screen and print, verified programmatically.
+- One accent, ice blue `#7cc7e8`, with `#2c6f8d` as its solid-fill step and
+  four fixed washes (0.06 / 0.09 / 0.12 / 0.30 alpha). Nothing may invent a
+  fifth. The accent also has to survive being set as text: 8.7:1 at worst.
+- Ball highlight: gold `#f5c451` — the only warm colour on the page, and it
+  belongs to the ball. Ice and gold are 45 ΔE00 apart, 51 under deuteranopia,
+  so "the accent" and "the ball" can never be read as the same thing.
+- Team A/B on the pitch: `#eef2f6` vs indigo `#6d78e0` (never red-vs-green).
+  The away shirt moved off cornflower when the accent became a blue — indigo
+  holds ≥ 19.7 ΔE00 from the accent and ≥ 38 from team A under protanopia and
+  deuteranopia. **Every pair of pitch marks stays above 15 ΔE00 under protan,
+  deutan and tritan simulation**; this is a build-time check, not a judgement.
+- Print inverts the whole token surface, not a subset of it: ink blue `#1d7396`
+  for the accent, `#8f5308` for the ball, violet-indigo `#3d2f9e` for team B
+  (the darker print accent converges with the screen indigo under deuteranopia,
+  so it moves too). Same 4.5:1 and 15 ΔE00 bars on white.
 - NO club branding of any kind. No red/white Arsenal palette.
-- Typography: Inter (UI) via self-hosted woff2, tabular numerals for stats.
+- Typography — three families, three jobs, no overlap, all self-hosted woff2
+  subset to latin:
+  - **Inter** 400/500 is the interface: controls, paragraphs, labels that are
+    sentences. The one you stop noticing.
+  - **Space Grotesk** 500/600/700 is the voice: wordmark (700, tracked
+    -0.035em), section and dialog titles (600, -0.025em), card titles (600,
+    -0.02em), uppercase eyebrow keys (500). Set tighter than Inter would be,
+    because its counters are wider.
+  - **IBM Plex Mono** 400/500/600 carries every number — `.num` on the span,
+    at 1.04em to correct for its shorter x-height. Stats belong in columns, and
+    a phase id read off the screen and typed into a terminal should look the
+    same in both places; `font-variant-numeric` on a proportional face only
+    ever got half of that.
 - Pitch: correct 120×80 proportions, full markings (boxes, six-yard, D, arcs,
   spots, centre circle), attacking direction always shown with an explicit arrow
-  + label. Line colour `#3a444c` on `#101820`-family turf. No gradient turf.
+  + label. Line colour `#44515c` on `#0c141b` turf. No gradient turf.
 - Animation: requestAnimationFrame, linear ball interpolation between event
   locations with slight ease; player dots from 360 frames shown at frame times
   with short cross-fades — never fabricate positions between frames beyond a
   short tween; if coverage is sparse, dots hold-and-fade honestly.
 - Charts: Altair-generated Vega-Lite specs rendered client-side (vega-embed)
-  with the same palette. Used for real summaries (zone distributions, outcome
-  mixes), not decoration.
+  with the same palette and the same three faces — titles in Space Grotesk,
+  axis labels in Plex Mono, everything else Inter. The heatmap ramp is four
+  steps of the accent, shared by every heatmap so a dense cell means the same
+  thing in the zone grid and in the duration matrix. `ingest/viz.py` holds the
+  palette; the specs are regenerated from the parquet, never hand-edited. Used
+  for real summaries (zone distributions, outcome mixes), not decoration.
 - Responsive: grid collapses 4 → 2 → 1 columns; player works portrait.
 
 ## 6. Performance budgets (hard requirements, measured and reported in README)
