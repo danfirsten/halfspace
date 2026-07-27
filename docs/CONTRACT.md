@@ -56,9 +56,16 @@ keep single-fetch sizes sensible; the web data layer treats the manifest as the 
 
 ### phases.parquet — schema (TBC exact columns after research; contract shape below)
 
-Identity: `phase_id` (string, stable, sortable: `{match_id}-{seq}`), `match_id`,
-`possession` (StatsBomb possession number), `team_id`, `team_name`, `period`,
-`start_ts` / `end_ts` (seconds into period, float), `minute`.
+Identity: `phase_id` (string, stable, sortable: `{match_id}-{seq}`, seq
+zero-padded to 4), `match_id`, `possession` (StatsBomb possession number),
+`team_id`, `team_name`, `opponent_id`, `opponent_name`, `period`,
+`start_ts` / `end_ts` (seconds into period, float), `abs_start_s` (seconds from
+kick-off), `minute`, `second`.
+
+Match labels live in **`matches.parquet.label`** (e.g.
+`Spain 2–1 England · Euro 2024 Final`) and are also denormalized onto every
+phase as **`match_label`** plus **`competition`** (§3b), so the results grid can
+render a card without a join. Dictionary encoding makes the duplication free.
 
 Features (every one must be documented in plain English in docs/phase-definitions.md):
 - `start_zone`, `end_zone` — pitch thirds × channels (see §4 zones)
@@ -74,6 +81,27 @@ Features (every one must be documented in plain English in docs/phase-definition
   `reached_final_third` (bool), `reached_box` (bool) — each per docs/phase-definitions.md
 - `xg` — max shot xG in phase (0 if none)
 - `has_360` (bool), `frame_coverage` (float 0-1: fraction of events with a 360 frame)
+- `n_shots` (int), `start_x`/`start_y`/`end_x`/`end_y`/`max_x` — the ball path's
+  endpoints and high-water mark, in the canonical frame
+- `goal_conceded` (bool) — the chain ended in a goal for the team that did NOT
+  own it. Six phases in the dataset: the ball changed hands and went in without
+  StatsBomb opening a new possession (Bajrami's 23-second goal against Italy is
+  one). They cannot be `outcome = 'goal'` without crediting the wrong team, and
+  with this flag every goal in the source data is accounted for exactly once:
+  `raw goals = count(outcome='goal') + count(goal_conceded)`.
+- `path_xy` — **list<float32> of 40 values** `[x0,y0,x1,y1,…,x19,y19]`: the
+  phase's ball trajectory resampled to 20 points **evenly spaced by arc length**,
+  in the canonical frame, endpoints pinned exactly to `start_x/y` and `end_x/y`.
+  It lets the results grid animate up to 96 thumbnails from the eager index with
+  no per-phase fetch. Stored as plain float32 in StatsBomb x/y units — no
+  quantization was needed: `phases.parquet` including `path_xy` measures
+  2.90 MB against the 6 MB budget.
+
+> **Unit note (see §3b).** `progression_m` / `direct_speed_m_s` are true metres
+> and metres per second, converted from StatsBomb's nominal yards at 0.9144
+> m/yard on x-axis deltas. Everything else — `start_x`, `end_x`, `max_x`,
+> `path_xy`, and all coordinates in `phase_events` / `phase_frames` — stays in
+> StatsBomb 120 × 80 units, because that is the frame the pitch is drawn in.
 
 ### Coordinates
 
