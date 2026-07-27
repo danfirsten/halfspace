@@ -53,11 +53,11 @@ const report = {};
     ),
   );
 
-  await page.waitForSelector('.card', { timeout: 90000 });
+  await page.waitForSelector('.card:not(.card-skeleton)', { timeout: 90000 });
   report.index_ready_ms = Date.now() - t0;
   await page.waitForTimeout(1400);
   await shot(page, 'landing');
-  report.cards = await page.locator('.card').count();
+  report.cards = await page.locator('.card:not(.card-skeleton)').count();
 
   await page.mouse.wheel(0, 620);
   await page.waitForTimeout(900);
@@ -97,7 +97,7 @@ const report = {};
 
   await page.click('.preset >> nth=4');
   await idle(page);
-  await page.locator('.card').first().click();
+  await page.locator('.card:not(.card-skeleton)').first().click();
   await page.waitForSelector('.player-pitch', { timeout: 30000 });
   await page.waitForFunction(
     () => document.querySelectorAll('.player-pitch circle').length > 4,
@@ -115,7 +115,7 @@ const report = {};
   report.similar_cold_ms = await page.locator('.results-head .num').last().innerText();
   await page.waitForTimeout(800);
   await shot(page, 'find-similar');
-  report.similar_results = await page.locator('.card').count();
+  report.similar_results = await page.locator('.card:not(.card-skeleton)').count();
 
   // Warm: this is the query the < 300 ms budget is actually about.
   await page.locator('.card .mini-btn', { hasText: /^Similar$/ }).nth(3).click();
@@ -123,7 +123,7 @@ const report = {};
   report.similar_warm_ms = await page.locator('.results-head .num').last().innerText();
 
   // Deep links must survive a cold reload.
-  await page.locator('.card').first().click();
+  await page.locator('.card:not(.card-skeleton)').first().click();
   await page.waitForSelector('.player-pitch', { timeout: 30000 });
   report.deep_link = page.url();
   await page.keyboard.press('Escape');
@@ -163,7 +163,7 @@ const report = {};
   page.on('pageerror', (e) => errors.push(`report pageerror: ${e.message}`));
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.card', { timeout: 90000 });
+  await page.waitForSelector('.card:not(.card-skeleton)', { timeout: 90000 });
   await idle(page);
 
   // Two phases from the first preset, one from the second: two searches, so
@@ -176,7 +176,7 @@ const report = {};
   await page.locator('.card .mini-btn', { hasText: /^Pin$/ }).first().click();
 
   // The fourth goes in from the player, on the keyboard.
-  await page.locator('.card').nth(2).click();
+  await page.locator('.card:not(.card-skeleton)').nth(2).click();
   await page.waitForSelector('.player-pitch', { timeout: 30000 });
   await page.keyboard.press('p');
   await page.keyboard.press('Escape');
@@ -271,13 +271,13 @@ const report = {};
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.preset');
   report.mobile_fmp_ms = Date.now() - t0;
-  await page.waitForSelector('.card', { timeout: 90000 });
+  await page.waitForSelector('.card:not(.card-skeleton)', { timeout: 90000 });
   await page.waitForTimeout(1400);
   await shot(page, 'mobile-landing');
   await page.mouse.wheel(0, 520);
   await page.waitForTimeout(800);
   await shot(page, 'mobile-results');
-  await page.locator('.card').first().click();
+  await page.locator('.card:not(.card-skeleton)').first().click();
   await page.waitForSelector('.player-pitch', { timeout: 30000 });
   await page.waitForTimeout(2200);
   await shot(page, 'mobile-player');

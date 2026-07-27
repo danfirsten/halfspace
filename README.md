@@ -31,8 +31,8 @@ keep warm, and nothing that can be down when you open the link.
    pitch, attacking left to right, labelled with the match, the clock, the outcome
    and the phase's best xG.
 3. **Open one.** Full-size replay: the ball with its trail, the 360 freeze frames
-   as player dots, a scrubbable timeline with a tick for every event, and the
-   phase's numbers underneath.
+   as player dots, a timeline whose every tick is a real event you can scrub to,
+   and the phase's numbers in a rail beside the pitch.
 4. **Find similar.** Cosine similarity over a 74-dimensional phase vector,
    computed in the browser with DuckDB's `list_dot_product`, ranked in about
    130 ms once the vectors are loaded.
@@ -208,13 +208,14 @@ under 2 s**, **any search under 300 ms**. Both hold.
 
 | | Measured | Budget |
 |---|---:|---:|
-| First meaningful paint (header, presets, skeleton pitches) | **434 ms** | < 2,000 ms |
-| First contentful paint | 280 ms | — |
-| Index ready — DuckDB-WASM up, 48 animated results on screen | 1,566 ms | — |
-| Preset query over 16,782 phases | **46–134 ms** | < 300 ms |
-| Find similar, cold (includes the one-time 2.66 MB vector fetch) | 481 ms | — |
-| Find similar, warm | **129 ms** | < 300 ms |
-| First meaningful paint, mobile viewport (390 × 844) | 267 ms | < 2,000 ms |
+| First meaningful paint (header, presets, placeholder pitches) | **341–450 ms** | < 2,000 ms |
+| First contentful paint | 252–308 ms | — |
+| Index ready — DuckDB-WASM up, 48 animated results on screen | 1,460–1,697 ms | — |
+| Preset query over 16,782 phases | **35–136 ms** | < 300 ms |
+| Find similar, cold (includes the one-time 2.66 MB vector fetch) | 238–272 ms | — |
+| Find similar, warm | **117–143 ms** | < 300 ms |
+| First meaningful paint, mobile viewport (390 × 844) | 230–310 ms | < 2,000 ms |
+| Cumulative layout shift, cold load to loaded grid | 0.003 | — |
 
 Measured locally, not on GitHub Pages: production build (`npm run build`) served by
 `vite preview` over loopback, driven by headless Chromium 141 through Playwright on a
@@ -223,16 +224,21 @@ context per run. Loopback removes real network latency from the paint numbers, s
 treat FMP as a floor; the query times are pure compute and travel unchanged. The
 harness that produces them is committed as [`web/shoot.mjs`](web/shoot.mjs) — it also
 takes every screenshot in this README, so the numbers and the pictures come from the
-same artifact that ships. The five preset timings on that run were 134, 55, 74, 46
-and 72 ms. Re-running the whole harness gave 492 ms / 1,491 ms / 42–127 ms / 146 ms
-on the same four rows, which is the run-to-run spread on this machine. The app footer
-shows the last query's time live, so the claim is checkable in the deployed site
-rather than only here.
+same artifact that ships. Every figure above is the range across four consecutive
+full runs, which is the run-to-run spread on this machine rather than a best-of.
+The app footer shows the last query's time live, so the claim is checkable in the
+deployed site rather than only here.
 
-Eager payload: 335 kB of app JS (103 kB gzipped), 33 kB CSS, `phases.parquet` at
+Layout shift is measured separately with a `layout-shift` PerformanceObserver over
+the same cold load. The grid's placeholder card is the loaded card with its text
+replaced, so the two are the same height to the pixel and nothing moves when the
+index lands.
+
+Eager payload: 342 kB of app JS (105 kB gzipped), 44 kB CSS (8.7 kB gzipped), `phases.parquet` at
 2.90 MB and `matches.parquet` at 10.7 kB. DuckDB-WASM (18.1 MB, 4.26 MB gzipped) and
 the Vega charting stack (845 kB, 290 kB gzipped) are code-split and loaded after the
-skeleton paints; the report page and the 360 frames are fetched only when asked for.
+placeholder grid paints; the report page and the 360 frames are fetched only when
+asked for.
 Zero console errors across the whole desktop, mobile and report walkthrough.
 
 ---

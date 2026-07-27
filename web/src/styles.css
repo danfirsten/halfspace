@@ -980,12 +980,15 @@ a:hover {
    moment the reader finishes the path it describes. It covers nothing. */
 
 .first-run {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--sp-12);
   flex-wrap: wrap;
   margin-top: var(--sp-16);
-  padding: var(--sp-8) var(--sp-8) var(--sp-8) var(--sp-12);
+  /* The dismiss sits in the corner rather than in the flow, so it cannot wrap
+     onto a line of its own when the steps fill the row on a phone. */
+  padding: var(--sp-8) var(--sp-32) var(--sp-8) var(--sp-12);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: linear-gradient(90deg, rgba(63, 182, 168, 0.06), transparent 46%);
@@ -1048,6 +1051,9 @@ a:hover {
 }
 
 .first-run-x {
+  position: absolute;
+  top: var(--sp-6);
+  right: var(--sp-6);
   background: none;
   border: 0;
   color: var(--text-mute);
@@ -1071,6 +1077,12 @@ a:hover {
 @media (max-width: 860px) {
   .first-run-tail {
     display: none;
+  }
+  .first-run {
+    gap: var(--sp-6) var(--sp-12);
+  }
+  .first-run-steps {
+    gap: var(--sp-12);
   }
 }
 
