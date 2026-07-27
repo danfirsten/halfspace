@@ -442,12 +442,11 @@ def build_phase_features(
         if is_regain_event(e, team_id) and e.get("location"):
             regain_ev = e
             break
-    regain_x = regain_y = None
+    regain_x = None
     if regain_ev is not None and regain_ev.get("location"):
-        rx, ry, _ = canon_event(
+        regain_x, _, _ = canon_event(
             regain_ev["location"], flip=regain_ev["team"]["id"] != team_id
         )
-        regain_x, regain_y = rx, ry
 
     press_before = any(t_id == team_id for _t, t_id in pre_phase_pressures)
     counterpress_regain = bool(regain_ev is not None and regain_ev.get("counterpress"))

@@ -35,7 +35,7 @@ from .config import (
     PERIOD_OFFSET_S,
     RAW_DIR,
 )
-from .geometry import ZONE_INDEX, ZONES
+from .geometry import ZONE_INDEX
 from .phases import (
     DEFAULT_THRESHOLDS,
     Thresholds,

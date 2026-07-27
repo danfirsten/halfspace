@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 import os
 import statistics
-from collections import Counter
 
 import duckdb
 
@@ -73,10 +72,6 @@ def counter_calibration() -> None:
     """What do StatsBomb's own `From Counter` possessions look like?"""
     counters: dict[str, list[float]] = {"speed": [], "prog": [], "dur": []}
     others: dict[str, list[float]] = {"speed": [], "prog": [], "dur": []}
-    rows = duckdb.execute(
-        f"select direct_speed_m_s, progression_m, duration_s, counterattack, "
-        f"reached_final_third, start_type from '{PH}'"
-    ).fetchall()
     # play_pattern is not published, so re-derive From Counter from raw events.
     mids = sorted(int(p.split(".")[0]) for p in os.listdir(RAW_DIR / "events"))[:30]
     for mid in mids:
@@ -99,7 +94,7 @@ def counter_calibration() -> None:
             bucket["prog"].append(prog)
             bucket["dur"].append(dur)
 
-    print(f"\n--- StatsBomb 'From Counter' possessions (30 matches) ---")
+    print("\n--- StatsBomb 'From Counter' possessions (30 matches) ---")
     for name in ("speed", "prog", "dur"):
         c, o = counters[name], others[name]
         print(f"{name:6s} counter: n={len(c):5d} p10={pct(c,10):6.2f} p25={pct(c,25):6.2f} "

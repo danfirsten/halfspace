@@ -139,10 +139,13 @@ turnover_open_play | regular`.
 
 1. If `play_pattern` is one of From Kick Off / From Goal Kick / From Corner /
    From Free Kick / From Throw In, use it. This is a possession-level label and
-   it agrees with the delivery's own `pass.type` essentially perfectly (§7.5).
+   the two independent signals for it — `play_pattern` and the delivery's own
+   `pass.type` — **never disagree once** across all 16,782 phases.
 2. Otherwise, if the chain's first pass by the team in possession carries a
-   set-piece `pass.type` anyway, use that. (A safety net for the handful of
-   restarts `play_pattern` labels Regular Play.)
+   set-piece `pass.type` anyway, use that. (A safety net for restarts that
+   `play_pattern` labels Regular Play; the ingest keeps a per-phase disagreement
+   flag so a future dataset that does diverge shows up rather than being
+   silently absorbed.)
 3. Otherwise — Regular Play, From Counter, From Keeper, Other — ask whether the
    ball **actually changed hands**: if the previous chain *in the same period*
    belonged to the other team, this is `turnover_open_play`; if it belonged to
