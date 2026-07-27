@@ -311,7 +311,42 @@ def _dir_bytes(path: Path) -> int:
     return sum(p.stat().st_size for p in path.rglob("*.parquet"))
 
 
-def run(workers: int = 4, thresholds: Thresholds = DEFAULT_THRESHOLDS, limit: int | None = None):
+#: How `similarity.parquet` gets its vectors. "baseline" is the hand-built
+#: 74-dim vector in `similarity.py`; "learned" is the P2 sequence encoder in
+#: `ingest/encoder/`, which only earns the default if it wins its own
+#: pre-registered evaluation (ingest/encoder/EVAL.md, RESULTS.md).
+SIMILARITY_METHODS = ("baseline", "learned")
+
+
+def write_similarity(df: pl.DataFrame, method: str, ckpt: str | None) -> dict:
+    """Write similarity.parquet by the chosen method; return its manifest block."""
+    if method == "baseline":
+        build_similarity(df).write_parquet(OUT_DIR / "similarity.parquet", **ZSTD)
+        return {"method": "baseline", "dims": DIM, "normalized": "l2"}
+
+    if not ckpt:
+        raise SystemExit("--similarity learned needs --encoder-ckpt")
+
+    # Imported lazily: the learned path needs torch, which lives in
+    # requirements-encoder.txt, and a normal build must not require it.
+    from encoder.export import export
+
+    info = export(ckpt)
+    return {
+        "method": "learned",
+        "dims": info["dims"],
+        "normalized": "l2",
+        "checkpoint": Path(ckpt).name,
+    }
+
+
+def run(
+    workers: int = 4,
+    thresholds: Thresholds = DEFAULT_THRESHOLDS,
+    limit: int | None = None,
+    similarity: str = "baseline",
+    encoder_ckpt: str | None = None,
+):
     t0 = time.time()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for sub in ("phase_events", "phase_frames"):
@@ -341,8 +376,7 @@ def run(workers: int = 4, thresholds: Thresholds = DEFAULT_THRESHOLDS, limit: in
     mdf = pl.DataFrame(matches)
     mdf.write_parquet(OUT_DIR / "matches.parquet", **ZSTD)
 
-    sim = build_similarity(df)
-    sim.write_parquet(OUT_DIR / "similarity.parquet", **ZSTD)
+    sim_meta = write_similarity(df, similarity, encoder_ckpt)
 
     elapsed = round(time.time() - t0, 1)
     orient: dict[str, int] = {}
@@ -367,7 +401,7 @@ def run(workers: int = 4, thresholds: Thresholds = DEFAULT_THRESHOLDS, limit: in
             "points": PATH_POINTS,
             "layout": "flat [x0,y0,x1,y1,...] of 2*points float32, arc-length resampled",
         },
-        "similarity": {"dims": DIM, "normalized": "l2"},
+        "similarity": sim_meta,
         "counts": {
             "matches": len(matches),
             "phases": df.height,
@@ -403,8 +437,20 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build Halfspace phase artifacts")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=None, help="only build the first N matches")
+    ap.add_argument(
+        "--similarity",
+        choices=SIMILARITY_METHODS,
+        default="baseline",
+        help="which representation similarity.parquet holds (see ingest/encoder/RESULTS.md)",
+    )
+    ap.add_argument("--encoder-ckpt", default=None, help="checkpoint for --similarity learned")
     args = ap.parse_args(argv)
-    run(workers=args.workers, limit=args.limit)
+    run(
+        workers=args.workers,
+        limit=args.limit,
+        similarity=args.similarity,
+        encoder_ckpt=args.encoder_ckpt,
+    )
     return 0
 
 

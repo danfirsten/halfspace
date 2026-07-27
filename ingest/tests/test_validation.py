@@ -585,7 +585,19 @@ def test_no_raw_statsbomb_json_is_tracked_by_git():
         text=True,
         check=True,
     ).stdout.split()
-    leaked = [p for p in tracked if os.path.basename(p) != "manifest.json"]
+    # What the licence forbids is the *raw* cache: `events/{match}.json`,
+    # `three-sixty/{match}.json`, `lineups/{match}.json`,
+    # `matches/{comp}/{season}.json`. Those are the shapes to look for. A
+    # tracked `package.json` or a hand-written config is not StatsBomb data,
+    # and an allowlist of legitimate filenames would need editing every time
+    # the app grows one.
+    raw_dirs = ("events/", "three-sixty/", "lineups/", "matches/")
+    leaked = [
+        p
+        for p in tracked
+        if any(f"/{d}" in f"/{p}" for d in raw_dirs)
+        or os.path.basename(p).removesuffix(".json").isdigit()
+    ]
     assert leaked == [], f"raw StatsBomb JSON is tracked by git: {leaked}"
 
 

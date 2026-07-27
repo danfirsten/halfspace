@@ -22,7 +22,7 @@ python3 -m venv .venv
 
 ./.venv/bin/python -m halfspace_ingest.download      # ~1.1 GB, ~40 s
 ./.venv/bin/python -m halfspace_ingest.build         # ~15 s on 4 cores
-./.venv/bin/python -m pytest                         # 160 tests, ~3 s
+./.venv/bin/python -m pytest                         # 184 tests, ~8 s
 ```
 
 Optional:
