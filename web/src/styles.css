@@ -1,37 +1,102 @@
-/* Halfspace design system — CONTRACT §5.
-   Restrained, dark, broadcast-analysis-desk. The pitch is the hero. */
+/* Halfspace design system — CONTRACT §5. "Ice & Ink".
+   Restrained, dark, broadcast-analysis-desk. The pitch is the hero.
 
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
+   Every grey on this page carries a few points of blue, because the pitch is
+   the coldest thing on it and the chrome has to belong to the pitch rather
+   than sit beside it. One accent — ice blue — and one warm, the ball. */
+
+/* Latin only. The interface is English and the licence text is English; the
+   Cyrillic, Greek and Vietnamese subsets were 130 kB of woff2 nobody fetched. */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/space-grotesk/latin-500.css';
+@import '@fontsource/space-grotesk/latin-600.css';
+@import '@fontsource/space-grotesk/latin-700.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
 
 :root {
-  --bg: #0e1114;
-  --surface: #161a1e;
-  --surface-2: #1b2126;
-  --hairline: #262c31;
+  --bg: #0a0d11;
+  --surface: #12171c;
+  --surface-2: #1a2027;
+  --hairline: #2b333b;
   /* One step up from the hairline: hover borders and the edges of anything
      that has to read as raised rather than merely present. */
-  --hairline-lit: #39424a;
+  --hairline-lit: #465360;
 
   /* Three text tiers and one non-text tier. Every text tier clears 4.5:1 on
      --bg, --surface and --surface-2; --rule is for marks (separators, dashes,
      disabled glyphs) and is never allowed to carry a word. */
-  --text: #e8eaec;
-  --text-dim: #8b949e;
-  --text-mute: #808a94;
-  --rule: #4a545d;
+  --text: #f0f3f6;
+  --text-dim: #9aa5b1;
+  --text-mute: #8e99a5;
+  --rule: #525d68;
 
-  --accent: #3fb6a8;
-  --accent-dim: #2b7d74;
-  --accent-wash: rgba(63, 182, 168, 0.12);
+  /* Ice blue. It is the only interactive colour, so it also has to survive
+     being set as text on all three surfaces — it clears 8.7:1 on the worst of
+     them. The washes are the same hue at four fixed alphas; nothing in the
+     stylesheet is allowed to invent a fifth. */
+  --accent: #7cc7e8;
+  --accent-dim: #2c6f8d;
+  --accent-wash: rgba(124, 199, 232, 0.12);
+  --accent-wash-soft: rgba(124, 199, 232, 0.09);
+  --accent-wash-faint: rgba(124, 199, 232, 0.06);
+  --accent-hover: rgba(124, 199, 232, 0.14);
+  --accent-select: rgba(124, 199, 232, 0.3);
+  --accent-glow: rgba(124, 199, 232, 0.26);
+  /* Ink for marks that sit ON the accent, and the two tints that read as
+     "accent" when the accent itself would be too loud for a word. */
+  --accent-ink: #04161d;
+  --accent-on-dim: #eaf7ff;
+  --accent-bright: #d3edfb;
+  --accent-soft: #c2e6f7;
+  --accent-badge: #9fd8f0;
+  --accent-badge-bg: rgba(124, 199, 232, 0.13);
+  --accent-badge-line: rgba(124, 199, 232, 0.35);
+
   --danger: #f0b3a6;
   --danger-line: #6b3a34;
+  --danger-text: #ff9482;
+  --danger-wash: rgba(160, 70, 55, 0.14);
+
+  /* The one warm colour on the page, and it belongs to the ball. Ice and gold
+     are 44 ΔE00 apart before simulation and 51 apart under deuteranopia, so
+     "the accent" and "the ball" can never be confused for one another. */
   --ball: #f5c451;
-  --team-a: #e8eaec;
-  --team-b: #5b8dd9;
-  --turf: #101820;
-  --turf-line: #3a444c;
+  --goal-wash: rgba(245, 196, 81, 0.16);
+  --goal-line: rgba(245, 196, 81, 0.4);
+
+  /* Team A is the near-white of the text tier; team B moved off the old
+     cornflower into indigo, because the accent is now a blue and a blue away
+     shirt beside it would have been two shades of one idea. Indigo holds
+     ~25 ΔE00 from the accent and ~40 from team A under both protanopia and
+     deuteranopia. */
+  --team-a: #eef2f6;
+  --team-b: #6d78e0;
+  --team-b-text: #a7aeef;
+  --team-b-wash: rgba(109, 120, 224, 0.14);
+  --team-b-line: rgba(109, 120, 224, 0.34);
+
+  --turf: #0c141b;
+  --turf-line: #44515c;
+  /* The turf a card lifts to on hover. */
+  --turf-lit: #101c26;
+  --pitch-hash: #1b2731;
+  --path-line: #5c6b7a;
+  --path-start: #808d9b;
+  --zone-line: rgba(154, 165, 177, 0.16);
+  /* The 360 camera's visible area, drawn on the pitch under the dots. */
+  --vision-fill: rgba(124, 199, 232, 0.05);
+  --vision-line: rgba(124, 199, 232, 0.18);
+
+  /* Anything that floats above the page has its own surface, one step darker
+     than the panel it covers so the shadow is not doing the work alone. */
+  --elevated: #0d1319;
+  --header-top: #0e151b;
+  --footer-bg: #070a0d;
+  --scrim: rgba(4, 6, 9, 0.8);
+  --mark-scrim: rgba(7, 11, 15, 0.85);
 
   /* Type roles. Fixed px, not fluid: an analyst reads this at one DPI all day
      and a heading that shrinks inside a panel is worse, not better
@@ -66,7 +131,23 @@
   --mid: 180ms;
   --slow: 260ms;
 
+  /* Three families, three jobs, no overlap.
+
+     Inter is the interface: every control, every paragraph, every label that
+     is a sentence. It is the one you stop noticing.
+
+     Space Grotesk is the voice: the wordmark, section and dialog titles, card
+     titles and the uppercase eyebrow keys. It is set tighter than Inter would
+     be because its counters are wider — at the same tracking it reads loose.
+
+     IBM Plex Mono carries every number. Stats belong in columns and a phase id
+     read off the screen and typed into a terminal should look the same in both
+     places; `font-variant-numeric` on a proportional face only ever got half
+     of that. Plex Mono's x-height is short next to Inter's, so `.num` is set
+     at 1.04em to sit on the same optical line as the words beside it. */
   --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   color-scheme: dark;
 }
@@ -90,13 +171,59 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Stats read as columns, not as ransom notes. */
+/* Stats read as columns, not as ransom notes. Plex Mono is already tabular;
+   the feature settings stay for the fallback stack. The 1.04em corrects for
+   its shorter x-height so "48 phases" does not look like a figure that shrank
+   on the way to the page. */
 .num,
 .stat,
 input[type='number'],
 table {
+  font-family: var(--font-num);
+  font-size: 1.04em;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
+}
+
+/* Titles, the wordmark, and the uppercase keys. */
+.brand h1,
+.section-head h2,
+.builder-head h2,
+.player-title,
+.empty-state h2,
+.report-empty h2,
+.report-title,
+.report-title-input,
+.report-section-title,
+.chart-card h3,
+.card-teams {
+  font-family: var(--font-display);
+}
+
+/* The eyebrow tier: short, uppercase, tracked out. Space Grotesk's flat
+   terminals hold a caps line better than Inter's do at 11px. */
+.chip-label,
+.builder-group h3,
+.pstat .k,
+.rstat .k,
+.first-run-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* `.num` loses on specificity to these four, so the optical correction that
+   puts Plex Mono on Inter's line has to be spelled out again rather than
+   inherited. 25px is --fs-display × 1.04, 15px is --fs-ui × 1.04. */
+.results-count strong,
+.rstat .v {
+  font-size: 25px;
+}
+.pstat .v {
+  font-size: 15px;
+}
+.first-run-n {
+  font-family: var(--font-num);
 }
 
 button,
@@ -124,7 +251,7 @@ a:hover {
 
 ::selection {
   background: var(--accent-dim);
-  color: #fff;
+  color: var(--accent-on-dim);
 }
 
 /* ---------- layout ---------- */
@@ -153,7 +280,7 @@ a:hover {
 
 .header {
   border-bottom: 1px solid var(--hairline);
-  background: linear-gradient(180deg, #12171b 0%, var(--bg) 100%);
+  background: linear-gradient(180deg, var(--header-top) 0%, var(--bg) 100%);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -184,8 +311,10 @@ a:hover {
 .brand h1 {
   margin: 0;
   font-size: var(--fs-title);
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  /* Space Grotesk's counters are wide; at Inter's tracking the wordmark read
+     as a sentence rather than a mark. */
+  letter-spacing: -0.035em;
 }
 
 .brand .mark {
@@ -234,7 +363,7 @@ a:hover {
   border-color: var(--accent);
   background: var(--surface-2);
   /* The input itself has no outline, so the box has to carry the focus. */
-  box-shadow: 0 0 0 2px rgba(63, 182, 168, 0.28);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .search input {
@@ -258,7 +387,7 @@ a:hover {
 .search button {
   background: var(--accent-dim);
   border: 0;
-  color: #eafffb;
+  color: var(--accent-on-dim);
   border-radius: var(--radius-sm);
   padding: var(--sp-6) var(--sp-12);
   font-size: var(--fs-body);
@@ -268,7 +397,7 @@ a:hover {
 }
 .search button:hover:not(:disabled) {
   background: var(--accent);
-  color: #06231f;
+  color: var(--accent-ink);
 }
 .search button:disabled {
   opacity: 0.45;
@@ -337,7 +466,7 @@ a:hover {
 }
 
 .preset[aria-pressed='true'] {
-  color: #d8fffa;
+  color: var(--accent-bright);
   border-color: var(--accent-dim);
   background: var(--accent-wash);
 }
@@ -430,7 +559,7 @@ a:hover {
 
 .chip.chip-similar {
   border-color: var(--accent-dim);
-  color: #cff6f1;
+  color: var(--accent-soft);
 }
 
 /* A term the parser recognised but the phase index cannot express. It is shown
@@ -465,8 +594,8 @@ a:hover {
     background var(--fast) var(--ease);
 }
 .chip button:hover {
-  color: #ff8f7a;
-  background: rgba(255, 143, 122, 0.1);
+  color: var(--danger-text);
+  background: var(--danger-wash);
 }
 
 .chip-label-off {
@@ -632,7 +761,7 @@ a:hover {
 
 .card:hover .card-pitch,
 .card:focus-within .card-pitch {
-  background: #131c25;
+  background: var(--turf-lit);
 }
 
 .card-pitch {
@@ -664,7 +793,7 @@ a:hover {
   gap: var(--sp-4);
   padding: var(--sp-2) var(--sp-8);
   border-radius: var(--radius-sm);
-  background: rgba(10, 14, 18, 0.85);
+  background: var(--mark-scrim);
   border: 1px solid var(--accent-dim);
   color: var(--accent);
   font-size: var(--fs-micro);
@@ -703,7 +832,7 @@ a:hover {
 .card-teams {
   font-size: var(--fs-ui);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   display: flex;
   align-items: baseline;
   gap: var(--sp-6);
@@ -795,19 +924,19 @@ a:hover {
   white-space: nowrap;
 }
 .badge-goal {
-  background: rgba(245, 196, 81, 0.16);
+  background: var(--goal-wash);
   color: var(--ball);
-  border-color: rgba(245, 196, 81, 0.4);
+  border-color: var(--goal-line);
 }
 .badge-shot_on_target {
-  background: rgba(63, 182, 168, 0.13);
-  color: #6ed3c7;
-  border-color: rgba(63, 182, 168, 0.35);
+  background: var(--accent-badge-bg);
+  color: var(--accent-badge);
+  border-color: var(--accent-badge-line);
 }
 .badge-shot_off_target {
-  background: rgba(91, 141, 217, 0.12);
-  color: #8fb3e8;
-  border-color: rgba(91, 141, 217, 0.3);
+  background: var(--team-b-wash);
+  color: var(--team-b-text);
+  border-color: var(--team-b-line);
 }
 .badge-neutral {
   background: var(--surface-2);
@@ -904,13 +1033,16 @@ a:hover {
 /* ---------- errors ---------- */
 
 .error-box {
-  border: 1px solid #6b3a34;
-  background: rgba(160, 70, 55, 0.12);
-  color: #f0b3a6;
+  border: 1px solid var(--danger-line);
+  background: var(--danger-wash);
+  color: var(--danger);
   border-radius: var(--radius);
   padding: 10px 13px;
   font-size: 13px;
   margin: 12px 0;
+}
+.error-box strong {
+  font-weight: 500;
 }
 .error-box ul {
   margin: 6px 0 0;
@@ -991,7 +1123,7 @@ a:hover {
   padding: var(--sp-8) var(--sp-32) var(--sp-8) var(--sp-12);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgba(63, 182, 168, 0.06), transparent 46%);
+  background: linear-gradient(90deg, var(--accent-wash-faint), transparent 46%);
   font-size: var(--fs-small);
   color: var(--text-dim);
 }
@@ -1130,7 +1262,7 @@ a:hover {
   top: calc(100% + 7px);
   left: -8px;
   width: min(340px, 78vw);
-  background: #10151a;
+  background: var(--elevated);
   border: 1px solid var(--hairline-lit);
   border-radius: var(--radius);
   padding: var(--sp-12);
@@ -1333,8 +1465,8 @@ a:hover {
   content: '';
   width: 5px;
   height: 2.5px;
-  border-left: 1.5px solid #06231f;
-  border-bottom: 1.5px solid #06231f;
+  border-left: 1.5px solid var(--accent-ink);
+  border-bottom: 1.5px solid var(--accent-ink);
   transform: rotate(-45deg) translate(0.5px, -1px);
 }
 .check:has(input:checked) {
@@ -1375,12 +1507,12 @@ a:hover {
 .tri-btn[data-state='on'] .tri-mark {
   background: var(--accent);
   border-color: var(--accent);
-  color: #06231f;
+  color: var(--accent-ink);
 }
 .tri-btn[data-state='off'] {
   color: var(--danger);
   border-color: var(--danger-line);
-  background: rgba(160, 70, 55, 0.12);
+  background: var(--danger-wash);
 }
 .tri-btn[data-state='off'] .tri-mark {
   border-color: var(--danger-line);
@@ -1490,8 +1622,8 @@ select:disabled {
 .zone-cell {
   background: none;
   border: 0;
-  border-right: 1px dashed rgba(138, 148, 158, 0.16);
-  border-bottom: 1px dashed rgba(138, 148, 158, 0.16);
+  border-right: 1px dashed var(--zone-line);
+  border-bottom: 1px dashed var(--zone-line);
   color: var(--text-mute);
   font-size: 9px;
   letter-spacing: 0.04em;
@@ -1509,12 +1641,12 @@ select:disabled {
   border-bottom: 0;
 }
 .zone-cell:hover {
-  background: rgba(63, 182, 168, 0.14);
+  background: var(--accent-hover);
   color: var(--text-dim);
 }
 .zone-cell[aria-pressed='true'] {
-  background: rgba(63, 182, 168, 0.32);
-  color: #d8fffa;
+  background: var(--accent-select);
+  color: var(--accent-bright);
 }
 .zone-cell:focus-visible {
   outline-offset: -3px;
@@ -1559,7 +1691,7 @@ select:disabled {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(6, 8, 10, 0.78);
+  background: var(--scrim);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
@@ -1610,7 +1742,7 @@ select:disabled {
 .player-title {
   font-size: var(--fs-title);
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
   display: flex;
   align-items: center;
   gap: var(--sp-8);
@@ -1723,7 +1855,7 @@ select:disabled {
 .play-btn {
   background: var(--accent-dim);
   border: 0;
-  color: #eafffb;
+  color: var(--accent-on-dim);
   border-radius: 50%;
   width: 34px;
   height: 34px;
@@ -1736,7 +1868,7 @@ select:disabled {
 }
 .play-btn:hover {
   background: var(--accent);
-  color: #06231f;
+  color: var(--accent-ink);
 }
 
 .clock {
@@ -1828,7 +1960,7 @@ select:disabled {
   height: 13px;
   border-radius: 50%;
   background: var(--ball);
-  border: 2px solid #0e1114;
+  border: 2px solid var(--bg);
   cursor: grab;
 }
 .timeline-input::-moz-range-thumb {
@@ -1836,7 +1968,7 @@ select:disabled {
   height: 13px;
   border-radius: 50%;
   background: var(--ball);
-  border: 2px solid #0e1114;
+  border: 2px solid var(--bg);
   cursor: grab;
 }
 
@@ -1888,7 +2020,7 @@ select:disabled {
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: #10151a;
+  background: var(--elevated);
   border: 1px solid var(--hairline-lit);
   border-radius: var(--radius-sm);
   padding: var(--sp-4) var(--sp-8);
@@ -2018,7 +2150,7 @@ select:disabled {
   margin: 0;
   font-size: var(--fs-title);
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
 }
 .section-head p {
   margin: 0;
@@ -2071,7 +2203,7 @@ select:disabled {
 .footer {
   border-top: 1px solid var(--hairline);
   margin-top: 20px;
-  background: #0b0e11;
+  background: var(--footer-bg);
 }
 
 .footer-inner {
@@ -2193,7 +2325,7 @@ select:disabled {
 .ghost-btn[aria-pressed='true'] {
   color: var(--accent);
   border-color: var(--accent-dim);
-  background: rgba(63, 182, 168, 0.09);
+  background: var(--accent-wash-soft);
 }
 
 .link-btn {
@@ -2227,8 +2359,8 @@ select:disabled {
 }
 
 .ghost-btn.danger:hover {
-  color: #ff8f7a;
-  border-color: #6b3a34;
+  color: var(--danger-text);
+  border-color: var(--danger-line);
 }
 
 .report-select {
@@ -2254,7 +2386,7 @@ select:disabled {
   top: calc(100% + 7px);
   right: 0;
   width: min(520px, 88vw);
-  background: #10151a;
+  background: var(--elevated);
   border: 1px solid var(--hairline-lit);
   border-radius: var(--radius);
   padding: 12px;
@@ -2289,7 +2421,7 @@ select:disabled {
 }
 
 .report-share-size.over {
-  color: #f0b3a6;
+  color: var(--danger);
 }
 
 .report-banner {
@@ -2298,7 +2430,7 @@ select:disabled {
   gap: 14px;
   flex-wrap: wrap;
   border: 1px solid var(--accent-dim);
-  background: rgba(63, 182, 168, 0.07);
+  background: var(--accent-wash-faint);
   border-radius: var(--radius);
   padding: var(--sp-12);
   font-size: var(--fs-small);
@@ -2308,6 +2440,7 @@ select:disabled {
 
 .report-banner strong {
   color: var(--text);
+  font-weight: 500;
 }
 
 /* ---- the document ---- */
@@ -2323,7 +2456,7 @@ select:disabled {
 .report-title {
   font-size: 28px;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
   margin: 0;
   color: var(--text);
 }
@@ -2572,20 +2705,71 @@ select:disabled {
     margin: 14mm;
   }
 
+  /* The whole token surface inverts, not a subset of it: anything left on a
+     dark-screen value would print as a light mark on white paper. The ice blue
+     comes down to an ink blue that still reads as the same idea at 300 dpi,
+     and every text tier clears 4.5:1 on white the way it does on ink. */
   :root {
     --bg: #ffffff;
     --surface: #ffffff;
     --surface-2: #f4f5f6;
     --hairline: #c9ced3;
+    --hairline-lit: #aab2ba;
     --text: #14181b;
-    --text-dim: #4a5560;
-    --accent: #17706a;
-    --accent-dim: #17706a;
-    --ball: #a8620a;
+    --text-dim: #46515c;
+    --text-mute: #5a646e;
+    --rule: #8a939c;
+
+    --accent: #1d7396;
+    --accent-dim: #1d7396;
+    --accent-wash: rgba(29, 115, 150, 0.08);
+    --accent-wash-soft: rgba(29, 115, 150, 0.06);
+    --accent-wash-faint: transparent;
+    --accent-hover: rgba(29, 115, 150, 0.1);
+    --accent-select: rgba(29, 115, 150, 0.2);
+    --accent-glow: transparent;
+    --accent-ink: #ffffff;
+    --accent-on-dim: #ffffff;
+    --accent-bright: #145672;
+    --accent-soft: #145672;
+    --accent-badge: #12495f;
+    --accent-badge-bg: rgba(29, 115, 150, 0.1);
+    --accent-badge-line: rgba(29, 115, 150, 0.45);
+
+    --danger: #8c2f20;
+    --danger-line: #c6a49d;
+    --danger-text: #8c2f20;
+    --danger-wash: rgba(160, 70, 55, 0.08);
+
+    --ball: #8f5308;
+    --goal-wash: rgba(143, 83, 8, 0.12);
+    --goal-line: rgba(143, 83, 8, 0.5);
+
+    /* Ink blue and violet-indigo, rather than the screen's ice and indigo:
+       on paper the accent has to come down to stay legible on white, and the
+       away shirt has to move with it or the two collapse into one blue under
+       deuteranopia. This pair holds 15.5 ΔE00 at the worst simulation. */
     --team-a: #14181b;
-    --team-b: #2d5ea8;
+    --team-b: #3d2f9e;
+    --team-b-text: #382b91;
+    --team-b-wash: rgba(61, 47, 158, 0.1);
+    --team-b-line: rgba(61, 47, 158, 0.45);
+
     --turf: #ffffff;
     --turf-line: #b9c0c6;
+    --turf-lit: #ffffff;
+    --pitch-hash: #dfe3e7;
+    --path-line: #8b949e;
+    --path-start: #6d7681;
+    --zone-line: rgba(20, 24, 27, 0.14);
+    --vision-fill: transparent;
+    --vision-line: rgba(29, 115, 150, 0.3);
+
+    --elevated: #ffffff;
+    --header-top: #ffffff;
+    --footer-bg: #ffffff;
+    --scrim: transparent;
+    --mark-scrim: transparent;
     color-scheme: light;
   }
 
@@ -2711,7 +2895,7 @@ select:disabled {
   /* The StatsBomb lockup is white artwork; on paper it needs its own dark
      chip. Clause 1.4 asks for the logo, so it prints. */
   .footer-logo {
-    background: #0e1114;
+    background: #0a0d11;
     padding: 5px 7px;
     border-radius: 3px;
   }

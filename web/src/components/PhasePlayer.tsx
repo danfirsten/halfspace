@@ -328,8 +328,8 @@ export function PhasePlayer({
               {activeFrame && activeFrame.frame.visible_area.length >= 6 ? (
                 <polygon
                   points={polygonPoints(activeFrame.frame.visible_area)}
-                  fill="rgba(63,182,168,0.045)"
-                  stroke="rgba(63,182,168,0.16)"
+                  fill="var(--vision-fill)"
+                  stroke="var(--vision-line)"
                   strokeWidth={0.16}
                 />
               ) : null}
@@ -616,7 +616,7 @@ function FrameDots({ frame }: { frame: PhaseFrameRow }) {
     const actor = (flag & FLAG_ACTOR) !== 0;
     const keeper = (flag & FLAG_KEEPER) !== 0;
     const fill = uncertain ? 'none' : possession ? 'var(--team-a)' : 'var(--team-b)';
-    const stroke = uncertain ? '#8b949e' : keeper ? 'var(--accent)' : 'none';
+    const stroke = uncertain ? 'var(--text-dim)' : keeper ? 'var(--accent)' : 'none';
     dots.push(
       <circle
         key={i}

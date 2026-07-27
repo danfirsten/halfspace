@@ -184,7 +184,7 @@ function ZoneGrid() {
           y1={0}
           x2={x}
           y2={PITCH_WIDTH}
-          stroke="#1c242b"
+          stroke="var(--pitch-hash)"
           strokeWidth={0.5}
           strokeDasharray="1.5 1.5"
         />
@@ -196,7 +196,7 @@ function ZoneGrid() {
           y1={y}
           x2={PITCH_LENGTH}
           y2={y}
-          stroke="#1c242b"
+          stroke="var(--pitch-hash)"
           strokeWidth={0.5}
           strokeDasharray="1.5 1.5"
         />

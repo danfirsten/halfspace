@@ -125,7 +125,7 @@ function ChartCard({ meta }: { meta: ChartMeta }) {
       <h3>{meta.title}</h3>
       <p>{meta.caption}</p>
       {failed ? (
-        <p style={{ color: '#6d7681' }}>Chart unavailable.</p>
+        <p style={{ color: 'var(--text-mute)' }}>Chart unavailable.</p>
       ) : (
         <div ref={ref} role="img" aria-label={`${meta.title}. ${meta.caption}`} />
       )}

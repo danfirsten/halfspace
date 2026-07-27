@@ -105,7 +105,7 @@ export function PathThumbnail({ pathXy, index, startZoneLabel, frozen }: Props) 
           ref={pathRef}
           d={d}
           fill="none"
-          stroke="#5a6773"
+          stroke="var(--path-line)"
           strokeWidth={0.55}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -123,7 +123,7 @@ export function PathThumbnail({ pathXy, index, startZoneLabel, frozen }: Props) 
           opacity={0.9}
         />
         {/* where the phase began */}
-        <circle cx={startX} cy={startY} r={1.2} fill="none" stroke="#7d8791" strokeWidth={0.4} />
+        <circle cx={startX} cy={startY} r={1.2} fill="none" stroke="var(--path-start)" strokeWidth={0.4} />
         <circle ref={ballRef} cx={ballX} cy={ballY} r={1.7} fill="var(--ball)" />
       </g>
     </Pitch>

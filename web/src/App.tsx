@@ -313,10 +313,17 @@ export default function App() {
     [query.filters],
   );
 
+  // The counts carry `.num` so they set in the same mono as every other figure
+  // on the page; the words around them stay in the interface face.
   const datasetLine = useMemo(() => {
-    if (!data) return '16,782 phases · 102 matches · Euro 2020 + Euro 2024';
-    const { phases, matches } = data.manifest.counts;
-    return `${integer(phases)} phases · ${integer(matches)} matches · ${data.competitions.join(' + ')}`;
+    const { phases, matches } = data?.manifest.counts ?? { phases: 16782, matches: 102 };
+    const competitions = data?.competitions ?? ['Euro 2020', 'Euro 2024'];
+    return (
+      <>
+        <span className="num">{integer(phases)}</span> phases ·{' '}
+        <span className="num">{integer(matches)}</span> matches · {competitions.join(' + ')}
+      </>
+    );
   }, [data]);
 
   const busy = !data || searching;
