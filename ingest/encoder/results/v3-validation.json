@@ -1,0 +1,68 @@
+{
+  "split": "validation",
+  "matches": 16,
+  "phases": 2587,
+  "eligible_phases": 1882,
+  "checkpoint": "encoder/checkpoints/v3-best.pt",
+  "primary": {
+    "baseline_generous": {
+      "n": 1882,
+      "mrr": 0.045710241606870435,
+      "recall@1": 0.023379383634431455,
+      "recall@10": 0.08023379383634431,
+      "median_rank": 314.0
+    },
+    "baseline_strict": {
+      "n": 1882,
+      "mrr": 0.022850373728499906,
+      "recall@1": 0.008501594048884165,
+      "recall@10": 0.04569606801275239,
+      "median_rank": 407.5
+    },
+    "learned": {
+      "n": 1882,
+      "mrr": 0.044847909927504585,
+      "recall@1": 0.019128586609989374,
+      "recall@10": 0.08660998937300744,
+      "median_rank": 286.5
+    }
+  },
+  "secondary": {
+    "label_prevalence": {
+      "cross": 0.13374565133359104,
+      "through_ball": 0.027831465017394665,
+      "high_pass": 0.6045612678778508,
+      "head_pass": 0.11712408194820255,
+      "aerial_won": 0.07460378817162737
+    },
+    "baseline": {
+      "k": 25,
+      "per_label_auc": {
+        "cross": 0.8943384327289892,
+        "through_ball": 0.7376352993152198,
+        "high_pass": 0.7626011580202654,
+        "head_pass": 0.6139784293665794,
+        "aerial_won": 0.6007072950078132
+      },
+      "macro_auc": 0.7218521228877733
+    },
+    "learned": {
+      "k": 25,
+      "per_label_auc": {
+        "cross": 0.8628270306660166,
+        "through_ball": 0.6285592003534349,
+        "high_pass": 0.7436823894418152,
+        "head_pass": 0.6911937253269985,
+        "aerial_won": 0.746270901779492
+      },
+      "macro_auc": 0.7345066495135514
+    }
+  },
+  "decision": {
+    "mrr_ratio": 0.9811348256090549,
+    "condition_1_mrr_x1.10": false,
+    "condition_2_recall1_no_regression": false,
+    "condition_3_transfer_no_harm": true,
+    "ship_learned": false
+  }
+}
