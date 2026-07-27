@@ -3,7 +3,15 @@
 This document is the single source of truth that every component is built against.
 If a component needs to deviate, this file gets updated first, then the component.
 
-Status: DRAFT — schema sections marked TBC are finalized after `docs/statsbomb-notes.md` lands.
+Status: FINAL — grounded in `docs/statsbomb-notes.md` (verified against spec PDFs + real data).
+
+## 0. Dataset (decided)
+
+**UEFA Euro 2024 (comp 55, season 282) + UEFA Euro 2020 (comp 55, season 43).**
+102 matches, 102/102 with real 360 files (measured 82–92% of events carry a frame,
+shots 100%). Raw download ≈ 1.1 GB — stays in the scratchpad, never in the repo
+(licence clause 1.2.1 forbids redistribution; no raw-data export features either).
+Penalty shootouts (`period == 5`) are excluded — degenerate one-shot possessions.
 
 ---
 
@@ -70,9 +78,24 @@ Features (every one must be documented in plain English in docs/phase-definition
 ### Coordinates
 
 Everything downstream of ingest uses ONE frame: StatsBomb event coordinates,
-120 × 80, attacking left → right for the phase's team. Ingest normalizes all
-geometry (including 360 frames and the opposition) into the acting team's
-attacking-right frame. The web app never flips coordinates.
+120 × 80, attacking left → right for the **phase's team** (possession_team).
+Ingest normalizes all geometry into that frame. The web app never flips
+coordinates. Binding facts from docs/statsbomb-notes.md:
+
+- Every raw event location is in the *acting team's* attacking frame; mirroring
+  a location into the other team's frame is `(120.1 − x, 80.1 − y)` — NOT 120/80
+  (locations sit on a 0.1-offset grid; verified exact on cross-team event pairs).
+- ~5% of 360 freeze frames are oriented to the opponent of the event's team
+  (paired duel-type events). Ingest must run the actor-position orientation
+  detector from statsbomb-notes.md before normalizing, per frame.
+- Freeze-frame coordinates legitimately fall outside the pitch (observed
+  x ∈ [−2.5, 123.5], y ∈ [−6.6, 89.5]); clamp only at render time, never assert.
+- Possession chains are segmented on `(match_id, period, possession)` — raw
+  possession numbers span half boundaries. Possession 1 stubs (Starting XI /
+  Half Start only) are dropped. ~1 in 3 possession increments is a restart to
+  the same team, not a turnover — `start_type` derivation must use the first
+  meaningful event + play_pattern, not the increment itself.
+- `counterpress` is a top-level event field (spec wrongly says nested).
 
 ## 3. PhaseQuery DSL
 
@@ -165,5 +188,10 @@ regardless. The parsed DSL is ALWAYS shown to the user before/with results.
   DSL validation + compilation. Not exhaustive UI tests.
 - Commit messages: real, descriptive, present tense. NO AI attribution,
   NO Co-Authored-By trailers, NO "Generated with" footers.
-- StatsBomb attribution exactly as the licence requires: app footer + README.
+- StatsBomb attribution (licence clause 1.4 requires the **logo**, not just
+  text). App footer + README must carry the StatsBomb logo (from their media
+  pack) plus: "Data provided by StatsBomb. Halfspace is built on StatsBomb Open
+  Data. Used under the StatsBomb Public Data User Agreement for research and
+  non-commercial analysis. StatsBomb is not affiliated with this project and
+  does not endorse any analysis presented here."
 - Cut rather than fake; note honest limitations in README.
