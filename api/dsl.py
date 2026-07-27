@@ -44,6 +44,7 @@ class PhaseField(str, Enum):
     start_ts = "start_ts"
     end_ts = "end_ts"
     minute = "minute"
+    competition = "competition"
     # features
     start_zone = "start_zone"
     end_zone = "end_zone"
@@ -94,6 +95,9 @@ START_TYPES = (
     "regular",
 )
 
+# Denormalized onto phases.parquet so the index is self-sufficient (CONTRACT §3b).
+COMPETITIONS = ("Euro 2020", "Euro 2024")
+
 OUTCOMES = (
     "goal",
     "shot_on_target",
@@ -110,6 +114,9 @@ class FieldSpec:
     kind: Kind
     doc: str
     values: tuple[str, ...] = ()
+    # Narrows the operators allowed for this specific column, where the kind's
+    # default set is wider than the contract permits.
+    ops: tuple["Op", ...] | None = None
 
 
 # The football meaning of each column, in the words we want the model to reason
@@ -127,6 +134,12 @@ FIELDS: dict[PhaseField, FieldSpec] = {
     PhaseField.start_ts: FieldSpec("float", "Seconds into the period when the phase starts."),
     PhaseField.end_ts: FieldSpec("float", "Seconds into the period when the phase ends."),
     PhaseField.minute: FieldSpec("int", "Match minute the phase starts in."),
+    PhaseField.competition: FieldSpec(
+        "enum",
+        "Tournament the phase was played in.",
+        COMPETITIONS,
+        ops=(Op.eq, Op.in_),
+    ),
     PhaseField.start_zone: FieldSpec(
         "enum",
         "Pitch zone where the phase started, in the attacking team's frame.",
@@ -184,6 +197,12 @@ OPS_BY_KIND: dict[Kind, tuple[Op, ...]] = {
     "text": (Op.eq, Op.neq, Op.in_),
 }
 
+
+def allowed_ops(field: PhaseField) -> tuple[Op, ...]:
+    spec = FIELDS[field]
+    return spec.ops if spec.ops is not None else OPS_BY_KIND[spec.kind]
+
+
 Scalar = StrictBool | StrictInt | StrictFloat | StrictStr
 # Strict* on purpose: "48" must not silently become 48, and True must not
 # satisfy an integer column. Loose coercion is how a wrong query looks right.
@@ -233,7 +252,7 @@ class Filter(BaseModel):
     @model_validator(mode="after")
     def _check(self) -> "Filter":
         spec = FIELDS[self.field]
-        allowed = OPS_BY_KIND[spec.kind]
+        allowed = allowed_ops(self.field)
         if self.op not in allowed:
             raise ValueError(
                 f"op '{self.op.value}' is not supported for {self.field.value} "

@@ -3,7 +3,16 @@ valid PhaseQuery we are teaching the model to fail validation."""
 
 import json
 
-from dsl import FIELDS, START_TYPES, ZONES, Op, PhaseField, PhaseQuery, sortable_fields
+from dsl import (
+    COMPETITIONS,
+    FIELDS,
+    START_TYPES,
+    ZONES,
+    Op,
+    PhaseField,
+    PhaseQuery,
+    sortable_fields,
+)
 from prompt import EXAMPLES, TOOL_NAME, TOOL_SCHEMA, build_system_prompt
 
 
@@ -19,8 +28,16 @@ def test_examples_cover_the_documented_cases():
     prompts = [text for text, _ in EXAMPLES]
     assert len(prompts) >= 6
     joined = " ".join(prompts).lower()
-    for phrase in ("high turnover", "long possession", "counterattack", "goal kick"):
+    for phrase in ("high turnover", "long possession", "counterattack", "goal kick", "euro 2024"):
         assert phrase in joined
+
+
+def test_a_competition_ask_maps_to_the_competition_filter():
+    example = next(
+        json.loads(raw) for text, raw in EXAMPLES if "Euro 2024" in text
+    )
+    competition = next(f for f in example["filters"] if f["field"] == "competition")
+    assert competition == {"field": "competition", "op": "eq", "value": "Euro 2024"}
 
 
 def test_unsupported_ask_example_drops_the_impossible_part():
@@ -51,9 +68,12 @@ def test_prompt_documents_every_field_and_enum_value():
         assert zone in system
     for start_type in START_TYPES:
         assert start_type in system
+    for competition in COMPETITIONS:
+        assert competition in system
 
 
-def test_competition_hint_tells_the_model_to_drop_it():
-    system = build_system_prompt(competitions=["UEFA Euro 2024"])
-    assert "UEFA Euro 2024" in system
-    assert "NO competition column" in system
+def test_competition_hint_points_at_the_column():
+    system = build_system_prompt(competitions=list(COMPETITIONS))
+    assert "`competition` column" in system
+    # Player and opponent asks are still dropped; competition no longer is.
+    assert "no player, opponent, date, scoreline" in system

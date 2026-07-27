@@ -121,6 +121,31 @@ def test_legacy_model_still_gets_temperature_zero():
     assert "output_config" not in kwargs
 
 
+def test_competition_filter_survives_validation():
+    payload = {
+        "version": 1,
+        "filters": [
+            {"field": "counterattack", "op": "eq", "value": True},
+            {"field": "competition", "op": "eq", "value": "Euro 2024"},
+        ],
+        "limit": 48,
+        "explanation": "Counterattacks from the Euro 2024 tournament.",
+    }
+    fake = FakeClient(tool_input=payload)
+    response = client_with(fake).post(
+        "/parse",
+        json={"text": "counterattacks at Euro 2024", "context": {"competitions": ["Euro 2024"]}},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["query"]["filters"][1] == {
+        "field": "competition",
+        "op": "eq",
+        "value": "Euro 2024",
+    }
+    assert "`competition` column" in fake.messages.calls[0]["system"]
+
+
 def test_parse_repairs_an_out_of_range_limit():
     payload = dict(VALID_PAYLOAD, limit=500)
     response = client_with(FakeClient(tool_input=payload)).post(

@@ -12,17 +12,18 @@ from __future__ import annotations
 from typing import Any
 
 from dsl import (
+    COMPETITIONS,
     DSL_VERSION,
     FIELDS,
     LIMIT_DEFAULT,
     LIMIT_MAX,
     LIMIT_MIN,
-    OPS_BY_KIND,
     OUTCOMES,
     START_TYPES,
     ZONES,
     Op,
     PhaseField,
+    allowed_ops,
     sortable_fields,
 )
 
@@ -109,7 +110,7 @@ TOOL_SCHEMA: dict[str, Any] = {
 def _field_reference() -> str:
     lines = []
     for field, spec in FIELDS.items():
-        ops = ", ".join(o.value for o in OPS_BY_KIND[spec.kind])
+        ops = ", ".join(o.value for o in allowed_ops(field))
         line = f"- {field.value} ({spec.kind}) — {spec.doc} ops: {ops}."
         if spec.values:
             line += f" values: {', '.join(spec.values)}."
@@ -145,6 +146,14 @@ EXAMPLES: list[tuple[str, str]] = [
              {"field": "team_name", "op": "eq", "value": "England"}],
  "limit": 48,
  "explanation": "England phases flagged as counterattacks."}""",
+    ),
+    (
+        "counterattacks at Euro 2024",
+        """{"version": 1,
+ "filters": [{"field": "counterattack", "op": "eq", "value": true},
+             {"field": "competition", "op": "eq", "value": "Euro 2024"}],
+ "limit": 48,
+ "explanation": "Counterattacks from the Euro 2024 tournament."}""",
     ),
     (
         "phases from goal kicks reaching the final third under 20 seconds",
@@ -211,13 +220,9 @@ def build_system_prompt(
             "team_name:\n" + ", ".join(teams) + "\n"
         )
     if competitions:
-        # phases.parquet has no competition column; the hint exists so the model
-        # can recognise a competition mention and say it dropped it.
         vocab += (
-            "\nCompetitions in the dataset: "
-            + ", ".join(competitions)
-            + ". There is NO competition column in the phase index — if the analyst "
-            "names a competition, drop that part of the request and say so.\n"
+            "\nCompetitions loaded in this deployment — filter on the `competition` "
+            "column using these spellings verbatim:\n" + ", ".join(competitions) + "\n"
         )
 
     return f"""You translate a football analyst's English into a PhaseQuery — the
@@ -256,6 +261,9 @@ Pitch zones are thirds x channels in the attacking team's frame:
 {', '.join(ZONES)}. Left/centre/right are from the attacking team's point of view.
 A "wide" area means the left and right channels; "central" means the centre channel.
 
+competition values: {', '.join(COMPETITIONS)} — "the Euros" or "the tournament"
+without a year means both, so leave the filter off entirely.
+
 start_type values: {', '.join(START_TYPES)}.
 outcome values: {', '.join(OUTCOMES)} — ordered by precedence, so a phase that ends
 in a goal has outcome "goal", not "shot_on_target".
@@ -274,11 +282,12 @@ in a goal has outcome "goal", not "shot_on_target".
 - "under pressure", "pressed" → pressure_events.
 - "from a corner / free kick / throw-in / goal kick / kick-off" → start_type.
 - "build-up from the back" → start_type goal_kick, or start_zone in the def_third zones.
+- "at Euro 2024", "in 2020", "at the last Euros" → competition.
 
 ## What you cannot express
 
-The index has no player, opponent, competition, date, scoreline or body-part
-columns, and no free-text search. If part of the request needs one of those, keep
+The index has no player, opponent, date, scoreline or body-part columns, and no
+free-text search. If part of the request needs one of those, keep
 the part you *can* express, drop the rest, and say plainly in `explanation` what
 you dropped. Never approximate a dropped condition with an unrelated filter, and
 never return an empty filter list just because one clause was impossible.

@@ -63,10 +63,10 @@ curl -s localhost:8000/parse -H 'content-type: application/json' -d '{
 }
 ```
 
-`context` is optional. It carries vocabulary hints only — team names so the model
-spells `team_name` exactly as the data does, and competition names so it can
-*recognise* a competition and tell the user it dropped that clause (there is no
-competition column in the phase index).
+`context` is optional. It carries vocabulary hints only — team and competition
+names so the model spells `team_name` and `competition` exactly as the data does
+(`"Euro 2020"` / `"Euro 2024"`, denormalised onto `phases.parquet` per CONTRACT
+§3b). Hints never widen what the DSL accepts; the field enums are fixed.
 
 Failure shapes:
 
@@ -108,9 +108,10 @@ onto the right two columns.
 
 ## Limitations (honest)
 
-- `phases.parquet` has no player, opponent, competition, date, scoreline or
-  body-part columns. Requests naming those are partially dropped, and the
-  `explanation` says so — the API never silently approximates them.
+- `phases.parquet` has no player, opponent, date, scoreline or body-part
+  columns. Requests naming those are partially dropped, and the `explanation`
+  says so — the API never silently approximates them. Team and competition
+  *are* filterable (`team_name`, `competition`).
 - Filters are conjunctive only. There is no OR across different columns; the
   `in` operator covers alternatives within a single column.
 - No caching, no rate limiting, no auth. This is a demo service in front of a

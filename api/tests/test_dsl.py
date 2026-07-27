@@ -72,6 +72,37 @@ def test_known_enum_value_accepted():
     assert Filter(field="outcome", op="eq", value="goal").value == "goal"
 
 
+# --- competition (denormalized onto phases.parquet, CONTRACT §3b) -----------
+
+
+def test_competition_eq_accepted():
+    assert Filter(field="competition", op="eq", value="Euro 2024").value == "Euro 2024"
+
+
+def test_competition_in_accepted():
+    f = Filter(field="competition", op="in", value=["Euro 2020", "Euro 2024"])
+    assert f.value == ["Euro 2020", "Euro 2024"]
+
+
+def test_competition_rejects_unknown_tournament():
+    with pytest.raises(ValidationError) as exc:
+        Filter(field="competition", op="eq", value="World Cup 2022")
+    assert "not a valid value for competition" in str(exc.value)
+
+
+def test_competition_spelling_is_exact():
+    with pytest.raises(ValidationError):
+        Filter(field="competition", op="eq", value="euro 2024")
+
+
+@pytest.mark.parametrize("op", ["neq", "gte", "lte", "between"])
+def test_competition_restricts_ops_to_eq_and_in(op):
+    # §3b pins competition to eq/in even though the enum kind allows neq.
+    with pytest.raises(ValidationError) as exc:
+        Filter(field="competition", op=op, value="Euro 2024")
+    assert "not supported for competition" in str(exc.value)
+
+
 # --- value typing -----------------------------------------------------------
 
 
@@ -176,7 +207,7 @@ def test_order_by_numeric_field_accepted():
     assert OrderBy(field="progression_m", dir="asc").dir == "asc"
 
 
-@pytest.mark.parametrize("field", ["counterattack", "outcome", "team_name"])
+@pytest.mark.parametrize("field", ["counterattack", "outcome", "team_name", "competition"])
 def test_order_by_non_numeric_field_rejected(field):
     with pytest.raises(ValidationError) as exc:
         OrderBy(field=field, dir="desc")
