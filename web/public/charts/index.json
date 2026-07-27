@@ -1,0 +1,26 @@
+{
+  "generated_from": "web/public/data/phases.parquet",
+  "phases": 16782,
+  "charts": [
+    {
+      "file": "outcome-by-start-type.json",
+      "title": "How a phase ends, by how it started",
+      "caption": "Corners end in a shot 39.3% of the time and goal kicks 6.2% \u2014 a six-fold spread from one restart type to another. Share within each start type, all 16,782 phases."
+    },
+    {
+      "file": "xg-distribution.json",
+      "title": "xG of the 2,315 phases that ended in a shot",
+      "caption": "Log-scaled count, 0.05 bins. Most shooting chances are small ones \u2014 1,050 of the 2,315 sit below 0.05 xG. Gold is the 253 phases that scored."
+    },
+    {
+      "file": "start-zone-heatmap.json",
+      "title": "Where a phase starts, and how often it ends in a shot",
+      "caption": "The 3 \u00d7 3 search grid, in the attacking team's frame. Only 199 phases start in the centre of the final third, and 55.3% of them end in a shot \u2014 against 8.9% for a phase starting in a team's own defensive centre."
+    },
+    {
+      "file": "progression-vs-duration.json",
+      "title": "Duration against upfield progression",
+      "caption": "The densest cell is the bottom-left \u2014 760 phases under 2.5 s that gained under 7.5 m. Above it, 45% of all phases gain 30\u201390 m at almost any duration. Log-scaled counts over all 16,782 phases."
+    }
+  ]
+}

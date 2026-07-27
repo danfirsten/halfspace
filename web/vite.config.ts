@@ -12,9 +12,11 @@ export default defineConfig({
       output: {
         // Keep DuckDB-WASM and the charting stack out of the critical path:
         // the skeleton must paint before either is parsed.
-        manualChunks: {
-          duckdb: ['@duckdb/duckdb-wasm'],
-          vega: ['vega', 'vega-lite', 'vega-embed'],
+        advancedChunks: {
+          groups: [
+            { name: 'duckdb', test: /node_modules[\\/]@duckdb[\\/]/ },
+            { name: 'vega', test: /node_modules[\\/]vega/ },
+          ],
         },
       },
     },

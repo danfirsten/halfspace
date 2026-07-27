@@ -1,0 +1,409 @@
+/**
+ * Halfspace — the application shell.
+ *
+ * Order of operations matters here and is deliberate (CONTRACT §6):
+ *   1. React renders the header, the preset chips and a skeleton grid of real
+ *      pitches. That is first meaningful paint, and it happens before a single
+ *      byte of DuckDB-WASM has been parsed.
+ *   2. `HalfspaceData.boot()` fetches the WASM bundle, phases.parquet,
+ *      matches.parquet and the manifest in parallel.
+ *   3. The moment the index is registered, preset 1 runs automatically. The
+ *      landing state is never empty.
+ *
+ * There is no state library. The whole app has one query, one result set and
+ * one open phase; useState and a handful of effects express that honestly.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Insights } from './charts/Insights';
+import { FilterBuilder } from './components/FilterBuilder';
+import { Footer } from './components/Footer';
+import { PhasePlayer } from './components/PhasePlayer';
+import { QueryChips } from './components/QueryChips';
+import { ResultsGrid, SkeletonGrid } from './components/ResultsGrid';
+import { parseText, SearchBar } from './components/SearchBar';
+import { parseQuery, type PhaseQuery } from './dsl/schema';
+import { DEFAULT_PRESET, PRESETS } from './dsl/presets';
+import { HalfspaceData, type SearchResult } from './duck/data';
+import type { PhaseEventRow, PhaseFrameRow, PhaseRow } from './duck/types';
+import { integer } from './lib/format';
+import { removeFilter } from './lib/builderState';
+
+const API_CONFIGURED = Boolean(import.meta.env.VITE_API_URL);
+
+interface SimilarPin {
+  phaseId: string;
+  label: string;
+}
+
+export default function App() {
+  const [data, setData] = useState<HalfspaceData | null>(null);
+  const [bootError, setBootError] = useState<string | null>(null);
+  const [bootMs, setBootMs] = useState<number | null>(null);
+
+  const [query, setQuery] = useState<PhaseQuery>(DEFAULT_PRESET.query);
+  const [activePreset, setActivePreset] = useState<string | null>(DEFAULT_PRESET.id);
+  const [result, setResult] = useState<SearchResult | null>(null);
+  const [searching, setSearching] = useState(true);
+  const [issues, setIssues] = useState<string[]>([]);
+  const [dropped, setDropped] = useState<string[]>([]);
+  const [parseNote, setParseNote] = useState<string | null>(null);
+  const [parseSource, setParseSource] = useState<'api' | 'offline' | null>(null);
+  const [similarPin, setSimilarPin] = useState<SimilarPin | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
+
+  const [openPhaseId, setOpenPhaseId] = useState<string | null>(null);
+  const [openPhase, setOpenPhase] = useState<PhaseRow | null>(null);
+  const [events, setEvents] = useState<PhaseEventRow[]>([]);
+  const [frames, setFrames] = useState<PhaseFrameRow[]>([]);
+  const [phaseLoading, setPhaseLoading] = useState(false);
+
+  // ---- boot ------------------------------------------------------------------
+  useEffect(() => {
+    const t0 = performance.now();
+    let cancelled = false;
+    HalfspaceData.boot()
+      .then((loaded) => {
+        if (cancelled) return;
+        setBootMs(performance.now() - t0);
+        setData(loaded);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setBootError(error instanceof Error ? error.message : String(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ---- run the query whenever it changes ------------------------------------
+  useEffect(() => {
+    if (!data || similarPin) return;
+    const validated = parseQuery(query);
+    if (!validated.ok) {
+      setIssues(validated.issues.map((i) => `${i.path}: ${i.message}`));
+      setSearching(false);
+      return;
+    }
+    setIssues([]);
+    setSearching(true);
+    let cancelled = false;
+    data
+      .search(validated.query)
+      .then((r) => {
+        if (!cancelled) {
+          setResult(r);
+          setSearching(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setIssues([error instanceof Error ? error.message : String(error)]);
+          setSearching(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data, query, similarPin]);
+
+  // ---- deep links (#phase=…) -------------------------------------------------
+  useEffect(() => {
+    const read = () => {
+      const match = /#phase=([^&]+)/.exec(window.location.hash);
+      setOpenPhaseId(match ? decodeURIComponent(match[1]) : null);
+    };
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
+
+  const openPhaseById = useCallback((phaseId: string | null) => {
+    if (phaseId) window.location.hash = `phase=${encodeURIComponent(phaseId)}`;
+    else if (window.location.hash) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      setOpenPhaseId(null);
+    }
+  }, []);
+
+  // ---- load the open phase's events and frames -------------------------------
+  useEffect(() => {
+    if (!data || !openPhaseId) {
+      setOpenPhase(null);
+      setEvents([]);
+      setFrames([]);
+      return;
+    }
+    let cancelled = false;
+    setPhaseLoading(true);
+    // The row is usually already on screen; only fall back to a query for a
+    // cold deep link.
+    const known = result?.rows.find((r) => r.phase_id === openPhaseId);
+    (known ? Promise.resolve(known) : data.phaseById(openPhaseId))
+      .then(async (phase) => {
+        if (cancelled || !phase) {
+          if (!cancelled) setPhaseLoading(false);
+          return;
+        }
+        setOpenPhase(phase);
+        const [loadedEvents, loadedFrames] = await Promise.all([
+          data.eventsFor(phase),
+          data.framesFor(phase),
+        ]);
+        if (cancelled) return;
+        setEvents(loadedEvents);
+        setFrames(loadedFrames);
+        setPhaseLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setPhaseLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // `result` is deliberately not a dependency: re-running the search must not
+    // reload the open player.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, openPhaseId]);
+
+  // ---- actions ---------------------------------------------------------------
+  const applyQuery = useCallback((next: PhaseQuery, presetId: string | null = null) => {
+    setSimilarPin(null);
+    setActivePreset(presetId);
+    setQuery(next);
+  }, []);
+
+  const runPreset = useCallback(
+    (id: string) => {
+      const preset = PRESETS.find((p) => p.id === id);
+      if (!preset) return;
+      setParseNote(null);
+      setDropped([]);
+      setParseSource(null);
+      applyQuery(preset.query, preset.id);
+    },
+    [applyQuery],
+  );
+
+  const runText = useCallback(
+    async (text: string) => {
+      if (!data) return;
+      setSearching(true);
+      const outcome = await parseText(text, {
+        teams: data.teams,
+        competitions: data.competitions,
+      });
+      setParseNote(outcome.explanation);
+      setDropped(outcome.dropped);
+      setParseSource(outcome.source);
+      applyQuery(outcome.query, null);
+    },
+    [data, applyQuery],
+  );
+
+  const findSimilar = useCallback(
+    async (phaseId: string) => {
+      if (!data) return;
+      const row =
+        result?.rows.find((r) => r.phase_id === phaseId) ?? (await data.phaseById(phaseId));
+      if (!row) return;
+      setSearching(true);
+      setSimilarPin({
+        phaseId,
+        label: `${row.team_name} v ${row.opponent_name}, ${row.minute}'`,
+      });
+      openPhaseById(null);
+      try {
+        setResult(await data.similarTo(phaseId, 24));
+      } catch (error) {
+        setIssues([error instanceof Error ? error.message : String(error)]);
+      } finally {
+        setSearching(false);
+      }
+    },
+    [data, result, openPhaseById],
+  );
+
+  const clearSimilar = useCallback(() => {
+    setSimilarPin(null);
+    // The query state is untouched, so clearing the pin simply re-runs it.
+    setQuery((q) => ({ ...q }));
+  }, []);
+
+  // ---- player navigation -----------------------------------------------------
+  const rows = result?.rows ?? [];
+  const openIndex = openPhaseId ? rows.findIndex((r) => r.phase_id === openPhaseId) : -1;
+  const goTo = useCallback(
+    (delta: number) => {
+      const next = rows[openIndex + delta];
+      if (next) openPhaseById(next.phase_id);
+    },
+    [rows, openIndex, openPhaseById],
+  );
+
+  const datasetLine = useMemo(() => {
+    if (!data) return '16,782 phases · 102 matches · Euro 2020 + Euro 2024';
+    const { phases, matches } = data.manifest.counts;
+    return `${integer(phases)} phases · ${integer(matches)} matches · ${data.competitions.join(' + ')}`;
+  }, [data]);
+
+  const busy = !data || searching;
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="shell header-inner">
+          <div className="brand">
+            <h1>
+              Half<span className="mark">space</span>
+            </h1>
+            <span className="tag">phase search</span>
+          </div>
+          <SearchBar onSubmit={runText} busy={busy} offline={!API_CONFIGURED} />
+          <span className="dataset-line">{datasetLine}</span>
+        </div>
+      </header>
+
+      <div className="controls">
+        <div className="shell controls-inner">
+          <div className="preset-row">
+            {PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className="preset"
+                aria-pressed={activePreset === preset.id}
+                title={preset.blurb}
+                onClick={() => runPreset(preset.id)}
+              >
+                {preset.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="ghost-btn"
+              aria-expanded={builderOpen}
+              onClick={() => setBuilderOpen((v) => !v)}
+            >
+              {builderOpen ? 'Hide filters' : 'Filters'}
+            </button>
+          </div>
+
+          <QueryChips
+            query={query}
+            onRemoveFilter={(i) => applyQuery(removeFilter(query, i), null)}
+            onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
+            similarTo={similarPin}
+            onClearSimilar={clearSimilar}
+          />
+
+          {builderOpen && data ? (
+            <FilterBuilder
+              query={query}
+              onChange={(next) => applyQuery(next, null)}
+              teams={data.teams}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <main className="shell" style={{ flex: 1 }}>
+        {bootError ? (
+          <div className="error-box">
+            <strong>Could not load the phase index.</strong> {bootError}
+          </div>
+        ) : null}
+
+        {issues.length ? (
+          <div className="error-box">
+            <strong>That query is not valid.</strong>
+            <ul>
+              {issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {parseNote || dropped.length ? (
+          <div className="note-box">
+            {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
+            {parseNote}
+            {dropped.length ? (
+              <>
+                {' '}
+                <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
+                that, so it was left out rather than approximated.
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="results-head">
+          <span className="results-count">
+            {!data ? (
+              <span className="status-line">
+                <span className="spinner" /> loading the phase index…
+              </span>
+            ) : searching ? (
+              <span className="status-line">
+                <span className="spinner" /> searching…
+              </span>
+            ) : similarPin ? (
+              <>
+                <strong className="num">{rows.length}</strong> most similar phases
+              </>
+            ) : (
+              <>
+                <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
+                {(result?.total ?? 0) > rows.length ? (
+                  <>
+                    {' '}
+                    · showing the top <span className="num">{rows.length}</span>
+                  </>
+                ) : null}
+              </>
+            )}
+          </span>
+          {result && !searching ? (
+            <span className="results-count num" title="Wall time for the DuckDB query in your browser">
+              {result.ms.toFixed(0)} ms
+            </span>
+          ) : null}
+        </div>
+
+        {!data && !bootError ? (
+          <SkeletonGrid count={8} />
+        ) : (
+          <ResultsGrid
+            rows={rows}
+            loading={searching && rows.length === 0}
+            onOpen={openPhaseById}
+            onSimilar={findSimilar}
+          />
+        )}
+      </main>
+
+      <Insights />
+
+      <Footer
+        lastQueryMs={result?.ms ?? null}
+        bootMs={bootMs}
+        datasetVersion={data?.manifest.dataset_version}
+        builtAt={data?.manifest.built_at}
+      />
+
+      {openPhase ? (
+        <PhasePlayer
+          phase={openPhase}
+          events={events}
+          frames={frames}
+          loading={phaseLoading}
+          onClose={() => openPhaseById(null)}
+          onPrev={openIndex > 0 ? () => goTo(-1) : null}
+          onNext={openIndex >= 0 && openIndex < rows.length - 1 ? () => goTo(1) : null}
+          onSimilar={findSimilar}
+        />
+      ) : null}
+    </div>
+  );
+}
