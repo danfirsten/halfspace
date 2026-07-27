@@ -208,3 +208,52 @@ describe('humanValue', () => {
     expect(humanValue('team_name', 'Spain')).toBe('Spain');
   });
 });
+
+describe('describeFilter — set collapsing', () => {
+  it('names a complete third rather than listing its three channels', () => {
+    expect(
+      describeFilter({
+        field: 'start_zone',
+        op: 'in',
+        value: ['def_third_left', 'def_third_centre', 'def_third_right'],
+      }),
+    ).toBe('Start zone: the defensive third');
+  });
+
+  it('names a complete channel across all three thirds', () => {
+    expect(
+      describeFilter({
+        field: 'end_zone',
+        op: 'in',
+        value: ['def_third_left', 'mid_third_left', 'final_third_left'],
+      }),
+    ).toBe('End zone: the left channel');
+  });
+
+  it('collapses what it can and lists the remainder', () => {
+    expect(
+      describeFilter({
+        field: 'start_zone',
+        op: 'in',
+        value: ['final_third_left', 'final_third_centre', 'final_third_right', 'mid_third_centre'],
+      }),
+    ).toBe('Start zone: the final third or centre middle third');
+  });
+
+  it('counts rather than lists beyond three members', () => {
+    expect(
+      describeFilter({
+        field: 'team_name',
+        op: 'in',
+        value: ['Spain', 'England', 'Italy', 'France'],
+      }),
+    ).toBe('Team: Spain, England +2 more');
+  });
+
+  it('leaves short sets exactly as they were', () => {
+    expect(describeFilter({ field: 'outcome', op: 'in', value: ['goal'] })).toBe('Outcome: goal');
+    expect(
+      describeFilter({ field: 'competition', op: 'in', value: ['Euro 2020', 'Euro 2024'] }),
+    ).toBe('Competition: Euro 2020 or Euro 2024');
+  });
+});

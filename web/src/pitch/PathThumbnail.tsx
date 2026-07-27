@@ -98,7 +98,7 @@ export function PathThumbnail({ pathXy, index, startZoneLabel, frozen }: Props) 
   }, [index, pathXy, frozen, ballX, ballY]);
 
   return (
-    <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} title={startZoneLabel}>
+    <Pitch lineWidth={0.34} labelSize={2.6} title={startZoneLabel}>
       <g ref={hostRef}>
         {/* the whole trajectory, faint — the shape is readable even paused */}
         <path

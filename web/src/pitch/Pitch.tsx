@@ -147,17 +147,19 @@ function AttackingArrow({
   const arrowEnd = arrowStart + size * 3.2;
   const head = size * 0.62;
   return (
-    <g opacity={0.75} aria-hidden="true">
-      <text
-        x={textX}
-        y={y + size * 0.35}
-        fill="var(--text-dim)"
-        fontSize={size}
-        letterSpacing={size * 0.03}
-        fontFamily="var(--font)"
-      >
-        attacking
-      </text>
+    <g opacity={0.7} aria-hidden="true">
+      {labelled ? (
+        <text
+          x={textX}
+          y={y + size * 0.35}
+          fill="var(--text-mute)"
+          fontSize={size}
+          letterSpacing={size * 0.03}
+          fontFamily="var(--font)"
+        >
+          attacking
+        </text>
+      ) : null}
       <line
         x1={arrowStart}
         y1={y}

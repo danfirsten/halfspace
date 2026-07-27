@@ -38,15 +38,44 @@ interface Props {
   loading?: boolean;
   /** Pin state for the active report, when there is one to pin into. */
   pin?: { isPinned: (phaseId: string) => boolean; onToggle: (phaseId: string) => void };
+  /** What the reader can do about an empty result, named for this query. */
+  empty?: {
+    /** Human text of the predicate most likely to be the culprit. */
+    lastFilter: string | null;
+    onDropLast: () => void;
+    onClearAll: () => void;
+  };
 }
 
-export function ResultsGrid({ rows, onOpen, onSimilar, loading, pin }: Props) {
+export function ResultsGrid({ rows, onOpen, onSimilar, loading, pin, empty }: Props) {
   if (loading) return <SkeletonGrid />;
 
+  /**
+   * Zero results is the moment an analyst is most likely to give up, so it is
+   * the one state that gets a way out rather than a sentence. The filters are
+   * ANDed, so the fix is always "ask for less" — and the two ways of asking for
+   * less are one click each.
+   */
   if (rows.length === 0) {
     return (
-      <div className="note-box" style={{ marginBottom: 24 }}>
-        <strong>No phases match.</strong> Every filter is conjunctive — try removing a chip.
+      <div className="empty-state">
+        <h2>No phase in the index matches all of that</h2>
+        <p>
+          Filters are combined with AND, so every one you add can only ever
+          remove phases. Drop one and the search widens.
+        </p>
+        {empty ? (
+          <div className="empty-actions">
+            {empty.lastFilter ? (
+              <button type="button" className="ghost-btn" onClick={empty.onDropLast}>
+                Drop “{empty.lastFilter}”
+              </button>
+            ) : null}
+            <button type="button" className="ghost-btn" onClick={empty.onClearAll}>
+              Clear all filters
+            </button>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -110,6 +139,11 @@ export const PhaseCard = memo(function PhaseCard({
           startZoneLabel={`${startTypeLabel(row.start_type)} → ${outcomeLabel(row.outcome)}`}
         />
         <span className="card-rank num">{rank}</span>
+        {/* Says what the click does. The card itself has always been the
+            button; this only makes that visible on hover and focus. */}
+        <span className="card-open" aria-hidden="true">
+          Watch phase
+        </span>
       </div>
 
       <div className="card-body">
@@ -174,7 +208,7 @@ export function MissingPhaseCard({
   return (
     <div className="card card-missing">
       <div className="card-pitch">
-        <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
+        <Pitch lineWidth={0.34} labelSize={2.6} />
       </div>
       <div className="card-body">
         <div className="card-teams">Phase not found</div>
@@ -200,6 +234,11 @@ export function MissingPhaseCard({
  * The landing skeleton. It draws the real pitch, not a grey box: the pitch is
  * the thing that has to be on screen before DuckDB-WASM is even parsed
  * (CONTRACT §6), so it may as well be the real one.
+ *
+ * It also reuses the card's own class names rather than approximating them.
+ * That is not tidiness — a skeleton that is 54 px shorter than the card it
+ * stands in for is a 0.05 layout shift the moment the index lands, and the
+ * cheapest way to never have one is to make the placeholder the same shape.
  */
 export function SkeletonGrid({ count = 8 }: { count?: number }) {
   return (
@@ -213,13 +252,24 @@ export function SkeletonGrid({ count = 8 }: { count?: number }) {
 
 export function SkeletonCard() {
   return (
-    <div className="skeleton-card" aria-hidden="true">
-      <div style={{ background: 'var(--turf)', opacity: 0.7 }}>
-        <Pitch lineWidth={0.34} labelSize={2.6} labelled={false} />
+    <div className="card card-skeleton" aria-hidden="true">
+      <div className="card-pitch">
+        <Pitch lineWidth={0.34} labelSize={2.6} />
       </div>
-      <div className="skeleton-line shimmer" style={{ width: '58%' }} />
-      <div className="skeleton-line shimmer" style={{ width: '38%', height: 7 }} />
-      <div className="skeleton-line shimmer" style={{ width: '72%', height: 7, marginBottom: 14 }} />
+      <div className="card-body">
+        <div className="card-teams">
+          <span className="sk-bar shimmer" style={{ width: '58%' }} />
+        </div>
+        <div className="card-meta">
+          <span className="sk-bar shimmer" style={{ width: '74%' }} />
+        </div>
+        <div className="card-stats">
+          <span className="sk-bar shimmer" style={{ width: '42%' }} />
+        </div>
+        <div className="card-stats card-micro">
+          <span className="sk-bar shimmer" style={{ width: '52%' }} />
+        </div>
+      </div>
     </div>
   );
 }

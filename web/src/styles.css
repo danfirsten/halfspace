@@ -10,20 +10,61 @@
   --surface: #161a1e;
   --surface-2: #1b2126;
   --hairline: #262c31;
+  /* One step up from the hairline: hover borders and the edges of anything
+     that has to read as raised rather than merely present. */
+  --hairline-lit: #39424a;
+
+  /* Three text tiers and one non-text tier. Every text tier clears 4.5:1 on
+     --bg, --surface and --surface-2; --rule is for marks (separators, dashes,
+     disabled glyphs) and is never allowed to carry a word. */
   --text: #e8eaec;
   --text-dim: #8b949e;
+  --text-mute: #808a94;
+  --rule: #4a545d;
+
   --accent: #3fb6a8;
   --accent-dim: #2b7d74;
+  --accent-wash: rgba(63, 182, 168, 0.12);
+  --danger: #f0b3a6;
+  --danger-line: #6b3a34;
   --ball: #f5c451;
   --team-a: #e8eaec;
   --team-b: #5b8dd9;
   --turf: #101820;
   --turf-line: #3a444c;
 
+  /* Type roles. Fixed px, not fluid: an analyst reads this at one DPI all day
+     and a heading that shrinks inside a panel is worse, not better
+     (operate.md). Steps ~1.15, no half-pixels. */
+  --fs-micro: 11px; /* uppercase keys, badges, axis labels */
+  --fs-small: 12px; /* metadata, captions */
+  --fs-body: 13px; /* default interface text */
+  --fs-ui: 14px; /* controls, inputs, card titles */
+  --fs-lead: 16px; /* card-level and panel-level headings */
+  --fs-title: 19px; /* section and dialog titles */
+  --fs-display: 24px; /* the one number a screen is about */
+
+  /* Spacing scale, 2px base with the useful middle steps. The name is the
+     value, so a stray 13px is obvious in review. */
+  --sp-2: 2px;
+  --sp-4: 4px;
+  --sp-6: 6px;
+  --sp-8: 8px;
+  --sp-12: 12px;
+  --sp-16: 16px;
+  --sp-20: 20px;
+  --sp-24: 24px;
+  --sp-32: 32px;
+  --sp-40: 40px;
+
   --radius: 6px;
+  --radius-sm: 4px;
   --ease: cubic-bezier(0.2, 0, 0.1, 1);
-  --fast: 150ms;
-  --slow: 250ms;
+  /* Confident deceleration for anything that arrives. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 120ms;
+  --mid: 180ms;
+  --slow: 260ms;
 
   --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -74,10 +115,11 @@ a:hover {
   text-decoration: underline;
 }
 
+/* One focus treatment everywhere, and it inherits the element's own corner so
+   the ring never cuts across a rounded card. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 3px;
 }
 
 ::selection {
@@ -104,7 +146,7 @@ a:hover {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--sp-24);
 }
 
 /* ---------- header ---------- */
@@ -121,24 +163,29 @@ a:hover {
 .header-inner {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  gap: var(--sp-16);
+  padding-top: var(--sp-12);
+  padding-bottom: var(--sp-12);
   flex-wrap: wrap;
 }
 
 .brand {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--sp-8);
   flex: 0 0 auto;
+  /* The wordmark and the search box are different jobs; a rule between them
+     says so without adding a box. */
+  padding-right: var(--sp-16);
+  border-right: 1px solid var(--hairline);
+  margin-right: calc(var(--sp-4) * -1);
 }
 
 .brand h1 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--fs-title);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .brand .mark {
@@ -146,19 +193,20 @@ a:hover {
 }
 
 .brand .tag {
-  color: var(--text-dim);
-  font-size: 12.5px;
-  letter-spacing: 0.02em;
-}
-
-.dataset-line {
-  color: var(--text-dim);
-  font-size: 12.5px;
+  color: var(--text-mute);
+  font-size: var(--fs-small);
   letter-spacing: 0.01em;
 }
 
+.dataset-line {
+  color: var(--text-mute);
+  font-size: var(--fs-small);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 .dataset-line .num {
-  color: var(--text);
+  color: var(--text-dim);
 }
 
 /* ---------- search box ---------- */
@@ -168,16 +216,23 @@ a:hover {
   min-width: 260px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-8);
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  padding: 0 10px;
-  transition: border-color var(--fast) var(--ease);
+  padding: 0 var(--sp-6) 0 var(--sp-12);
+  transition:
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
+}
+
+.search:hover {
+  border-color: var(--hairline-lit);
 }
 
 .search:focus-within {
   border-color: var(--accent-dim);
+  background: var(--surface-2);
 }
 
 .search input {
@@ -185,12 +240,12 @@ a:hover {
   background: none;
   border: 0;
   outline: none;
-  padding: 9px 0;
-  font-size: 14px;
+  padding: var(--sp-8) 0;
+  font-size: var(--fs-ui);
 }
 
 .search input::placeholder {
-  color: #6d7681;
+  color: var(--text-mute);
 }
 
 .search .icon {
@@ -202,14 +257,14 @@ a:hover {
   background: var(--accent-dim);
   border: 0;
   color: #eafffb;
-  border-radius: 4px;
-  padding: 5px 12px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-6) var(--sp-12);
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   transition: background var(--fast) var(--ease);
 }
-.search button:hover {
+.search button:hover:not(:disabled) {
   background: var(--accent);
   color: #06231f;
 }
@@ -219,13 +274,12 @@ a:hover {
 }
 
 .badge-offline {
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.03em;
+  color: var(--text-mute);
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  padding: 2px 7px;
+  padding: var(--sp-2) var(--sp-8);
   white-space: nowrap;
 }
 
@@ -237,17 +291,27 @@ a:hover {
 }
 
 .controls-inner {
-  padding: 12px 24px 14px;
+  padding: var(--sp-12) var(--sp-24) var(--sp-12);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--sp-8);
 }
 
 .preset-row {
   display: flex;
-  gap: 8px;
+  gap: var(--sp-8);
   flex-wrap: wrap;
   align-items: center;
+}
+
+/* The presets are the offered queries; the filter toggle is a different kind
+   of thing, so it sits after a gap and a rule rather than pretending to be a
+   sixth preset. */
+.preset-row .preset-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--hairline);
+  margin: 0 var(--sp-4);
 }
 
 .preset {
@@ -255,8 +319,8 @@ a:hover {
   border: 1px solid var(--hairline);
   color: var(--text-dim);
   border-radius: 999px;
-  padding: 5px 13px;
-  font-size: 13px;
+  padding: var(--sp-6) var(--sp-12);
+  font-size: var(--fs-body);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -267,13 +331,13 @@ a:hover {
 
 .preset:hover {
   color: var(--text);
-  border-color: #39424a;
+  border-color: var(--hairline-lit);
 }
 
 .preset[aria-pressed='true'] {
   color: #d8fffa;
   border-color: var(--accent-dim);
-  background: rgba(63, 182, 168, 0.12);
+  background: var(--accent-wash);
 }
 
 .ghost-btn {
@@ -281,51 +345,67 @@ a:hover {
   border: 1px solid var(--hairline);
   color: var(--text-dim);
   border-radius: var(--radius);
-  padding: 5px 12px;
-  font-size: 13px;
+  padding: var(--sp-6) var(--sp-12);
+  font-size: var(--fs-body);
   cursor: pointer;
   transition:
     color var(--fast) var(--ease),
-    border-color var(--fast) var(--ease);
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
 }
 .ghost-btn:hover {
   color: var(--text);
-  border-color: #39424a;
+  border-color: var(--hairline-lit);
+  background: var(--surface);
 }
 .ghost-btn[aria-expanded='true'] {
   color: var(--accent);
   border-color: var(--accent-dim);
+  background: var(--accent-wash);
+}
+
+/* Number of predicates the builder is holding, on the toggle itself. */
+.filter-count {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: var(--sp-6);
+  padding: 0 var(--sp-4);
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  text-align: center;
 }
 
 /* ---------- chips ---------- */
 
 .chip-row {
   display: flex;
-  gap: 7px;
+  gap: var(--sp-6);
   flex-wrap: wrap;
   align-items: center;
-  min-height: 28px;
+  min-height: 26px;
 }
 
 .chip-label {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6d7681;
-  margin-right: 2px;
+  color: var(--text-mute);
+  margin-right: var(--sp-2);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-4);
   background: var(--surface-2);
   border: 1px solid var(--hairline);
-  border-radius: 4px;
-  padding: 3px 4px 3px 9px;
-  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-8);
+  font-size: var(--fs-small);
   color: var(--text);
-  animation: chip-in var(--slow) var(--ease);
+  animation: chip-in var(--mid) var(--ease-out);
 }
 
 @keyframes chip-in {
@@ -349,50 +429,90 @@ a:hover {
   color: #cff6f1;
 }
 
+/* A term the parser recognised but the phase index cannot express. It is shown
+   in the same row as the applied filters, struck through, so "what it
+   understood" and "what it could not do" are read in one pass. */
+.chip.chip-dropped {
+  border-style: dashed;
+  border-color: var(--rule);
+  background: none;
+  color: var(--text-mute);
+  padding-right: var(--sp-8);
+  text-decoration: line-through;
+  text-decoration-color: var(--rule);
+}
+
 .chip button {
   background: none;
   border: 0;
   color: var(--text-dim);
   cursor: pointer;
   line-height: 1;
-  padding: 2px 4px;
+  /* 24px of hit area around a 12px glyph. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border-radius: 3px;
-  transition: color var(--fast) var(--ease);
+  transition:
+    color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
 }
 .chip button:hover {
   color: #ff8f7a;
+  background: rgba(255, 143, 122, 0.1);
+}
+
+.chip-label-off {
+  margin-left: var(--sp-2);
 }
 
 .chip-empty {
-  font-size: 12.5px;
-  color: #6d7681;
+  font-size: var(--fs-small);
+  color: var(--text-mute);
 }
 
 /* ---------- results ---------- */
 
+/* The one line the search view is about. The count is the headline; the query
+   time is the quiet sibling that proves it. */
 .results-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 0 12px;
+  gap: var(--sp-16);
+  padding: var(--sp-24) 0 var(--sp-12);
   flex-wrap: wrap;
+  min-height: 52px;
 }
 
 .results-count {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--text-dim);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
 }
 .results-count strong {
   color: var(--text);
+  font-size: var(--fs-display);
   font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.results-ms {
+  font-size: var(--fs-small);
+  color: var(--text-mute);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  padding-bottom: 28px;
+  gap: var(--sp-16);
+  padding-bottom: var(--sp-32);
 }
 
 @media (max-width: 1100px) {
@@ -482,52 +602,108 @@ a:hover {
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  position: relative;
   transition:
     border-color var(--fast) var(--ease),
-    transform var(--fast) var(--ease);
+    background var(--fast) var(--ease),
+    transform var(--mid) var(--ease-out);
 }
 
-.card:hover {
-  border-color: #3a444c;
-  transform: translateY(-1px);
+/* The card is one 350px click target, so the hover has to be legible from a
+   metre away: the turf lifts out of the page, the border warms, the card
+   rises. Before this it was a hairline shade and one pixel. */
+.card:hover,
+.card:focus-visible,
+.card:focus-within {
+  border-color: var(--hairline-lit);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+.card:hover .card-pitch,
+.card:focus-within .card-pitch {
+  background: #131c25;
 }
 
 .card-pitch {
   position: relative;
   background: var(--turf);
   border-bottom: 1px solid var(--hairline);
+  transition: background var(--fast) var(--ease);
 }
 
+/* Rank sits on the same left edge as the card body's text. */
 .card-rank {
   position: absolute;
-  top: 6px;
-  left: 7px;
-  font-size: 10.5px;
-  color: #7d8791;
+  top: var(--sp-6);
+  left: var(--sp-12);
+  font-size: var(--fs-micro);
+  color: var(--text-mute);
   letter-spacing: 0.04em;
 }
 
+/* "Watch" is the primary action and it belongs on the pitch, where the click
+   already is. Hover/focus affordance only: the whole card has always been the
+   button and still is for keyboard and touch. */
+.card-open {
+  position: absolute;
+  right: var(--sp-8);
+  bottom: var(--sp-8);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-8);
+  border-radius: var(--radius-sm);
+  background: rgba(10, 14, 18, 0.85);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(3px);
+  pointer-events: none;
+  transition:
+    opacity var(--fast) var(--ease),
+    transform var(--mid) var(--ease-out);
+}
+
+.card:hover .card-open,
+.card:focus-visible .card-open,
+.card:focus-within .card-open {
+  opacity: 1;
+  transform: none;
+}
+
+/* Nothing to hover on a touchscreen, so it is simply always there. */
+@media (hover: none) {
+  .card-open {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .card-body {
-  padding: 9px 11px 10px;
+  padding: var(--sp-12);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--sp-4);
   flex: 1;
 }
 
 .card-teams {
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: baseline;
+  gap: var(--sp-6);
   min-width: 0;
+  min-height: 21px;
 }
 .card-teams .vs {
-  color: #6d7681;
+  color: var(--text-mute);
   font-weight: 400;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 .card-teams .opp {
   color: var(--text-dim);
@@ -538,27 +714,34 @@ a:hover {
 }
 
 .card-meta {
-  font-size: 11.5px;
-  color: #6d7681;
+  font-size: var(--fs-small);
+  color: var(--text-mute);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-height: 18px;
 }
 
 .card-stats {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
+  gap: var(--sp-6);
+  font-size: var(--fs-small);
   color: var(--text-dim);
-  min-height: 19px;
+  min-height: 20px;
   white-space: nowrap;
   overflow: hidden;
 }
 
+/* Pinned to the bottom, so every card in a row shares one action baseline
+   whatever the phase happens to contain. */
 .card-micro {
   margin-top: auto;
-  padding-top: 3px;
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--hairline);
+  /* 27px button + 8px padding: pinned so the placeholder card and the loaded
+     card are the same height and the grid never jumps. */
+  min-height: 35px;
 }
 
 .card-stats .grow {
@@ -566,7 +749,7 @@ a:hover {
 }
 
 .card-stats .sep {
-  color: #39424a;
+  color: var(--rule);
 }
 
 .mini-btn {
@@ -574,17 +757,19 @@ a:hover {
   flex: 0 0 auto;
   border: 1px solid var(--hairline);
   color: var(--text-dim);
-  border-radius: 4px;
-  font-size: 11.5px;
-  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-micro);
+  padding: var(--sp-4) var(--sp-8);
   cursor: pointer;
   transition:
     color var(--fast) var(--ease),
-    border-color var(--fast) var(--ease);
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
 }
 .mini-btn:hover {
   color: var(--accent);
   border-color: var(--accent-dim);
+  background: var(--accent-wash);
 }
 
 /* outcome badges */
@@ -627,6 +812,27 @@ a:hover {
 }
 
 /* ---------- skeleton ---------- */
+
+/* The placeholder is a real card with its text replaced, so its height is the
+   loaded card's height to the pixel and the grid does not jump when the index
+   lands. */
+.card-skeleton {
+  cursor: default;
+}
+.card-skeleton:hover {
+  border-color: var(--hairline);
+  background: var(--surface);
+  transform: none;
+}
+.card-skeleton .card-pitch {
+  opacity: 0.7;
+}
+
+.sk-bar {
+  display: block;
+  height: 8px;
+  border-radius: 3px;
+}
 
 .skeleton-card {
   background: var(--surface);
@@ -715,6 +921,149 @@ a:hover {
   font-weight: 500;
 }
 
+/* One line naming which parser answered. The terms it could not use are chips
+   in the query row, not prose down here. */
+.parse-note {
+  margin: var(--sp-12) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-mute);
+  max-width: 90ch;
+}
+.parse-note strong {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* ---------- empty results ---------- */
+
+.empty-state {
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--sp-24);
+  margin-bottom: var(--sp-32);
+  max-width: 62ch;
+}
+
+.empty-state h2 {
+  margin: 0 0 var(--sp-6);
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.empty-actions {
+  display: flex;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
+  margin-top: var(--sp-16);
+}
+
+/* ---------- first-run hint ----------
+   In the flow, one row high, dismissed for good on the first click or the
+   moment the reader finishes the path it describes. It covers nothing. */
+
+.first-run {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+  flex-wrap: wrap;
+  margin-top: var(--sp-16);
+  padding: var(--sp-8) var(--sp-8) var(--sp-8) var(--sp-12);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(63, 182, 168, 0.06), transparent 46%);
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+}
+
+.first-run-label {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+}
+
+.first-run-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.first-run-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: var(--text);
+  transition: color var(--fast) var(--ease);
+}
+
+.first-run-steps li.is-done {
+  color: var(--text-mute);
+  text-decoration: line-through;
+  text-decoration-color: var(--rule);
+}
+
+.first-run-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-lit);
+  font-size: 10px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.first-run-steps li.is-done .first-run-n {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.first-run-tail {
+  color: var(--text-mute);
+  margin-left: auto;
+}
+
+.first-run-x {
+  background: none;
+  border: 0;
+  color: var(--text-mute);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition:
+    color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
+}
+.first-run-x:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+@media (max-width: 860px) {
+  .first-run-tail {
+    display: none;
+  }
+}
+
 /* ---------- info popover ---------- */
 
 .info {
@@ -725,7 +1074,7 @@ a:hover {
 .info-btn {
   background: none;
   border: 1px solid var(--hairline);
-  color: #6d7681;
+  color: var(--text-mute);
   width: 15px;
   height: 15px;
   border-radius: 50%;
@@ -751,7 +1100,7 @@ a:hover {
   left: -8px;
   width: min(340px, 78vw);
   background: #10151a;
-  border: 1px solid #39424a;
+  border: 1px solid var(--hairline-lit);
   border-radius: var(--radius);
   padding: 11px 13px;
   font-size: 12.5px;
@@ -778,7 +1127,7 @@ a:hover {
   font-size: 11.5px;
 }
 .info-pop .prov {
-  color: #6d7681;
+  color: var(--text-mute);
   margin-top: 5px;
   font-size: 11.5px;
   font-style: italic;
@@ -812,7 +1161,7 @@ a:hover {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #6d7681;
+  color: var(--text-mute);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -849,7 +1198,7 @@ a:hover {
   appearance: none;
   width: 11px;
   height: 11px;
-  border: 1px solid #4a545d;
+  border: 1px solid var(--rule);
   border-radius: 2px;
   margin: 0;
   display: grid;
@@ -906,7 +1255,7 @@ a:hover {
 }
 
 .range-row .dash {
-  color: #4a545d;
+  color: var(--rule);
 }
 
 select {
@@ -935,7 +1284,7 @@ select:focus {
 .zone-axis {
   font-size: 9.5px;
   letter-spacing: 0.04em;
-  color: #6d7681;
+  color: var(--text-mute);
   text-align: center;
   text-transform: uppercase;
 }
@@ -949,7 +1298,7 @@ select:focus {
   border: 1px solid var(--hairline);
   border-radius: 3px;
   height: 26px;
-  color: #6d7681;
+  color: var(--text-mute);
   font-size: 10px;
   cursor: pointer;
   padding: 0;
@@ -958,7 +1307,7 @@ select:focus {
     border-color var(--fast) var(--ease);
 }
 .zone-cell:hover {
-  border-color: #4a545d;
+  border-color: var(--rule);
 }
 .zone-cell[aria-pressed='true'] {
   background: rgba(63, 182, 168, 0.34);
@@ -967,7 +1316,7 @@ select:focus {
 
 .zone-legend {
   font-size: 10.5px;
-  color: #6d7681;
+  color: var(--text-mute);
   display: flex;
   justify-content: space-between;
   max-width: 220px;
@@ -1044,7 +1393,7 @@ select:focus {
 
 .player-sub {
   font-size: 12px;
-  color: #6d7681;
+  color: var(--text-mute);
   margin-top: 3px;
 }
 
@@ -1072,7 +1421,7 @@ select:focus {
 }
 .icon-btn:hover:not(:disabled) {
   color: var(--text);
-  border-color: #39424a;
+  border-color: var(--hairline-lit);
 }
 .icon-btn:disabled {
   opacity: 0.35;
@@ -1222,7 +1571,7 @@ select:focus {
   width: 2px;
   height: 8px;
   border-radius: 1px;
-  background: #4a545d;
+  background: var(--rule);
   transform: translateX(-1px);
   pointer-events: auto;
 }
@@ -1243,7 +1592,7 @@ select:focus {
   bottom: calc(100% + 6px);
   transform: translateX(-50%);
   background: #10151a;
-  border: 1px solid #39424a;
+  border: 1px solid var(--hairline-lit);
   border-radius: 4px;
   padding: 5px 8px;
   font-size: 11.5px;
@@ -1274,7 +1623,7 @@ select:focus {
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6d7681;
+  color: var(--text-mute);
 }
 .pstat .v {
   font-size: 14px;
@@ -1392,7 +1741,7 @@ select:focus {
   flex: 1 1 420px;
   font-size: 11.5px;
   line-height: 1.6;
-  color: #6d7681;
+  color: var(--text-mute);
 }
 .footer-text a {
   color: var(--text-dim);
@@ -1405,7 +1754,7 @@ select:focus {
 
 .footer-meta {
   font-size: 11px;
-  color: #565f68;
+  color: var(--text-mute);
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1529,7 +1878,7 @@ select:focus {
   right: 0;
   width: min(520px, 88vw);
   background: #10151a;
-  border: 1px solid #39424a;
+  border: 1px solid var(--hairline-lit);
   border-radius: var(--radius);
   padding: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
@@ -1558,7 +1907,7 @@ select:focus {
 .report-share-size {
   margin-top: 7px;
   font-size: 11.5px;
-  color: #6d7681;
+  color: var(--text-mute);
   line-height: 1.5;
 }
 
@@ -1624,13 +1973,13 @@ select:focus {
 }
 
 .report-title-input::placeholder {
-  color: #4d565e;
+  color: var(--text-mute);
 }
 
 /* A section that has not been renamed still has to read as a heading, so its
    placeholder is only one step dimmer than real text — not form-field grey. */
 .report-section-title::placeholder {
-  color: #7d8791;
+  color: var(--text-mute);
 }
 
 .report-byline {
@@ -1667,7 +2016,7 @@ select:focus {
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6d7681;
+  color: var(--text-mute);
 }
 
 .rstat .v {
@@ -1679,7 +2028,7 @@ select:focus {
 .report-summary-note {
   margin: 0 0 18px;
   font-size: 11.5px;
-  color: #6d7681;
+  color: var(--text-mute);
   line-height: 1.55;
   max-width: 78ch;
 }
@@ -1703,7 +2052,7 @@ select:focus {
 }
 
 .report-notes:hover {
-  border-left-color: #39424a;
+  border-left-color: var(--hairline-lit);
 }
 
 .report-notes:focus {
@@ -1711,7 +2060,7 @@ select:focus {
 }
 
 .report-notes::placeholder {
-  color: #4d565e;
+  color: var(--text-mute);
 }
 
 .report-notes-print {
@@ -1800,7 +2149,7 @@ select:focus {
 
 .report-empty-note {
   font-size: 12px !important;
-  color: #6d7681 !important;
+  color: var(--text-mute) !important;
 }
 
 .report-provenance {
@@ -1808,7 +2157,7 @@ select:focus {
   padding-top: 12px;
   border-top: 1px solid var(--hairline);
   font-size: 11.5px;
-  color: #6d7681;
+  color: var(--text-mute);
   max-width: 82ch;
   line-height: 1.55;
 }

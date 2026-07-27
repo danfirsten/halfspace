@@ -16,6 +16,13 @@ interface Props {
   /** Set while results are pinned to a "similar to X" search. */
   similarTo?: { phaseId: string; label: string } | null;
   onClearSimilar?: () => void;
+  /**
+   * Terms the parser recognised but the phase index cannot express. They belong
+   * in this row, not in a paragraph underneath it: "what it understood" and
+   * "what it could not do" are the same question, and an analyst deciding
+   * whether to trust the result should read both in one glance.
+   */
+  dropped?: string[];
 }
 
 export function QueryChips({
@@ -24,6 +31,7 @@ export function QueryChips({
   onClearOrder,
   similarTo,
   onClearSimilar,
+  dropped = [],
 }: Props) {
   const empty = query.filters.length === 0 && !query.order_by && !similarTo;
 
@@ -76,7 +84,18 @@ export function QueryChips({
         </span>
       ) : null}
 
-      {empty ? (
+      {dropped.length ? <span className="chip-label chip-label-off">not applied</span> : null}
+      {dropped.map((term) => (
+        <span
+          className="chip chip-dropped"
+          key={term}
+          title="The phase index has no column for this, so it was left out rather than approximated."
+        >
+          {term}
+        </span>
+      ))}
+
+      {empty && !dropped.length ? (
         <span className="chip-empty">
           no filters — every phase, {describeOrderBy(null)}
         </span>

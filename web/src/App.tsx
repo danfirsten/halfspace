@@ -27,7 +27,8 @@ import { PhasePlayer } from './components/PhasePlayer';
 import { QueryChips } from './components/QueryChips';
 import { ResultsGrid, SkeletonGrid } from './components/ResultsGrid';
 import { parseText, SearchBar } from './components/SearchBar';
-import { parseQuery, type PhaseQuery } from './dsl/schema';
+import { describeFilter } from './dsl/compile';
+import { EMPTY_QUERY, parseQuery, type PhaseQuery } from './dsl/schema';
 import { DEFAULT_PRESET, PRESETS } from './dsl/presets';
 import { HalfspaceData, type SearchResult } from './duck/data';
 import { integer } from './lib/format';
@@ -279,6 +280,20 @@ export default function App() {
     [rows, openIndex, openPhaseById],
   );
 
+  /**
+   * The filter to offer removing when nothing matched. The last one in the list
+   * is the one the reader most recently added — through the builder, a chip or
+   * a parse — so it is the honest guess, and the button names it rather than
+   * claiming to know which predicate is "too narrow".
+   */
+  const lastFilter = useMemo(
+    () =>
+      query.filters.length
+        ? { filter: query.filters[query.filters.length - 1], index: query.filters.length - 1 }
+        : null,
+    [query.filters],
+  );
+
   const datasetLine = useMemo(() => {
     if (!data) return '16,782 phases · 102 matches · Euro 2020 + Euro 2024';
     const { phases, matches } = data.manifest.counts;
@@ -351,6 +366,7 @@ export default function App() {
                     {preset.label}
                   </button>
                 ))}
+                <span className="preset-sep" aria-hidden="true" />
                 <button
                   type="button"
                   className="ghost-btn"
@@ -358,6 +374,9 @@ export default function App() {
                   onClick={() => setBuilderOpen((v) => !v)}
                 >
                   {builderOpen ? 'Hide filters' : 'Filters'}
+                  {query.filters.length ? (
+                    <span className="filter-count num">{query.filters.length}</span>
+                  ) : null}
                 </button>
               </div>
 
@@ -367,6 +386,7 @@ export default function App() {
                 onClearOrder={() => applyQuery({ ...query, order_by: null }, null)}
                 similarTo={similarPin}
                 onClearSimilar={clearSimilar}
+                dropped={dropped}
               />
 
               {builderOpen && data ? (
@@ -397,29 +417,28 @@ export default function App() {
               </div>
             ) : null}
 
-            {parseNote || dropped.length ? (
-              <div className="note-box">
-                {parseSource === 'offline' ? <strong>Offline parser · </strong> : null}
-                {parseNote}
-                {dropped.length ? (
-                  <>
-                    {' '}
-                    <strong>Dropped:</strong> {dropped.join('; ')} — the phase index has no column for
-                    that, so it was left out rather than approximated.
-                  </>
-                ) : null}
-              </div>
+            {/* The dropped terms themselves are chips in the row above; what is
+                left here is the one sentence that names which parser answered. */}
+            {parseNote ? (
+              <p className="parse-note">
+                {parseSource === 'offline' ? (
+                  <strong>Offline parser</strong>
+                ) : (
+                  <strong>Parsed by the API</strong>
+                )}{' '}
+                · {parseNote}
+              </p>
             ) : null}
 
             <div className="results-head">
               <span className="results-count">
                 {!data ? (
                   <span className="status-line">
-                    <span className="spinner" /> loading the phase index…
+                    <span className="spinner" /> Loading the phase index…
                   </span>
                 ) : searching ? (
                   <span className="status-line">
-                    <span className="spinner" /> searching…
+                    <span className="spinner" /> Searching…
                   </span>
                 ) : similarPin ? (
                   <>
@@ -427,18 +446,24 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    <strong className="num">{integer(result?.total ?? 0)}</strong> phases match
-                    {(result?.total ?? 0) > rows.length ? (
-                      <>
-                        {' '}
-                        · showing the top <span className="num">{rows.length}</span>
-                      </>
-                    ) : null}
+                    <strong className="num">{integer(result?.total ?? 0)}</strong>
+                    <span>
+                      phases match
+                      {(result?.total ?? 0) > rows.length ? (
+                        <>
+                          {' '}
+                          · showing the top <span className="num">{rows.length}</span>
+                        </>
+                      ) : null}
+                    </span>
                   </>
                 )}
               </span>
               {result && !searching ? (
-                <span className="results-count num" title="Wall time for the DuckDB query in your browser">
+                <span
+                  className="results-ms num"
+                  title="Wall time for the DuckDB query in your browser"
+                >
                   {result.ms.toFixed(0)} ms
                 </span>
               ) : null}
@@ -453,6 +478,17 @@ export default function App() {
                 onOpen={openPhaseById}
                 onSimilar={findSimilar}
                 pin={{ isPinned, onToggle: togglePin }}
+                empty={{
+                  lastFilter: lastFilter ? describeFilter(lastFilter.filter) : null,
+                  onDropLast: () => {
+                    if (lastFilter) applyQuery(removeFilter(query, lastFilter.index), null);
+                  },
+                  onClearAll: () => {
+                    setParseNote(null);
+                    setDropped([]);
+                    applyQuery({ ...EMPTY_QUERY, limit: query.limit }, null);
+                  },
+                }}
               />
             )}
           </main>

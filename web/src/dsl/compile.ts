@@ -208,7 +208,7 @@ export function describeFilter(filter: Filter): string {
       return `${spec.label} ≤ ${fmt(filter.value as Scalar)}`;
     case 'in': {
       const values = filter.value as Scalar[];
-      return `${spec.label}: ${values.map(fmt).join(' or ')}`;
+      return `${spec.label}: ${describeSet(filter.field, values, fmt)}`;
     }
     case 'between': {
       const [low, high] = filter.value as [Scalar, Scalar];
@@ -218,6 +218,47 @@ export function describeFilter(filter: Filter): string {
       return `${spec.label} ${filter.op}`;
   }
 }
+
+/**
+ * A set of values, written the way a person would say it.
+ *
+ * Enumerating every member is honest but unreadable: three zones spelled out in
+ * full produced the chip "Start zone: left defensive third or centre defensive
+ * third or right defensive third", which is 62 characters to say "the
+ * defensive third". So a complete third or a complete channel collapses to its
+ * own name, and any set beyond three members is counted rather than listed.
+ * Nothing here changes what is selected: the builder's checkboxes remain the
+ * full, exact list, and the compiled SQL is untouched.
+ */
+function describeSet(
+  field: PhaseFieldName,
+  values: Scalar[],
+  fmt: (v: Scalar) => string,
+): string {
+  const parts: string[] = [];
+  let rest = values.map(String);
+
+  if (field === 'start_zone' || field === 'end_zone') {
+    const take = (names: string[], label: string) => {
+      if (names.every((n) => rest.includes(n))) {
+        parts.push(label);
+        rest = rest.filter((n) => !names.includes(n));
+      }
+    };
+    for (const [third, label] of Object.entries(ZONE_THIRDS)) {
+      take(CHANNEL_KEYS.map((c) => `${third}_${c}`), `the ${label}`);
+    }
+    for (const channel of CHANNEL_KEYS) {
+      take(Object.keys(ZONE_THIRDS).map((t) => `${t}_${channel}`), `the ${channel} channel`);
+    }
+  }
+
+  const listed = [...parts, ...rest.map((v) => fmt(v as Scalar))];
+  if (listed.length <= 3) return listed.join(' or ');
+  return `${listed.slice(0, 2).join(', ')} +${listed.length - 2} more`;
+}
+
+const CHANNEL_KEYS = ['left', 'centre', 'right'] as const;
 
 const ZONE_THIRDS: Record<string, string> = {
   def_third: 'defensive third',
