@@ -1,3 +1,5 @@
+![Halfspace: search football by passages of play. Two passes and a shot, with Pip carrying the ball into the box.](docs/assets/banner.png)
+
 # Halfspace
 
 <p align="center">
